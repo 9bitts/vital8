@@ -1,36 +1,156 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vital8 — Fase 1 (Fundação)
 
-## Getting Started
+ERP SaaS multi-tenant vertical em saúde. Esta fase entrega: multi-tenancy, autenticação, RBAC, auditoria, criptografia PHI (utilitário) e shell da aplicação.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Next.js 14 (App Router)
+- TypeScript strict
+- Prisma + PostgreSQL
+- Auth.js v5 (JWT)
+- Zod
+- Tailwind CSS + shadcn/ui
+
+## Pré-requisitos (Windows / PowerShell)
+
+- Node.js 20+
+- PostgreSQL 15+ (local ou Railway)
+- Git
+
+## Setup
+
+### 1. Clonar e instalar dependências
+
+```powershell
+cd C:\Users\diego\Documents\vital8
+npm install
+npm approve-scripts --allow-scripts-pending
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configurar variáveis de ambiente
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```powershell
+Copy-Item .env.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Edite `.env` com sua `DATABASE_URL` PostgreSQL.
 
-## Learn More
+Gere chaves seguras (32 bytes em base64):
 
-To learn more about Next.js, take a look at the following resources:
+```powershell
+# AUTH_SECRET
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# PHI_ENCRYPTION_KEY
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. Banco de dados
 
-## Deploy on Vercel
+```powershell
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 4. Executar
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```powershell
+npm run dev
+```
+
+Acesse [http://localhost:3000](http://localhost:3000)
+
+## Contas de desenvolvimento (após seed)
+
+Senha para todas: `Vital8@dev`
+
+| E-mail | Papel | Organização |
+|--------|-------|-------------|
+| ana@vidaplena.local | OWNER | Clínica Vida Plena |
+| carlos@drteste.local | OWNER | Consultório Dr. Teste |
+| bruno@multi.local | ADMIN + FINANCEIRO | Ambas (testar switcher) |
+| carla@vidaplena.local | RECEPCAO | Clínica Vida Plena |
+
+## Testes
+
+```powershell
+# Testes unitários de criptografia PHI
+npm test -- src/lib/crypto/phi.test.ts
+
+# Testes de isolamento multi-tenant (requer DATABASE_URL)
+npm test -- src/lib/db/tenant-isolation.test.ts
+
+# Todos os testes
+npm test
+
+# Typecheck
+npx tsc --noEmit
+```
+
+## Estrutura principal
+
+```
+src/
+  app/                 # Rotas Next.js
+  modules/core/        # Organização, membros, convites, auditoria
+  lib/db/              # admin-client, tenant-client
+  lib/auth/            # Auth.js, guards
+  lib/crypto/          # PHI encryption
+prisma/
+  schema.prisma
+  seed.ts
+```
+
+## Multi-tenancy
+
+- Isolamento row-level por `organizationId`
+- `createTenantClient(orgId)` injeta filtros automaticamente
+- `adminPrisma` apenas para rotinas de sistema (documentado em `admin-client.ts`)
+
+## Deploy
+
+- **App:** Vercel
+- **PostgreSQL:** Railway
+
+Configure as mesmas variáveis de ambiente nos dois serviços.
+
+## Decisões arquiteturais
+
+Ver [DECISOES.md](./DECISOES.md)
+
+## CHECKLIST DE VERIFICAÇÃO
+
+Execute em PowerShell na raiz do projeto:
+
+```powershell
+# 1. Migrations aplicadas
+npx prisma migrate status
+
+# 2. TypeScript sem erros
+npx tsc --noEmit
+
+# 3. Testes de criptografia PHI
+npm test -- src/lib/crypto/phi.test.ts
+
+# 4. Testes de isolamento multi-tenant
+npm test -- src/lib/db/tenant-isolation.test.ts
+
+# 5. Build de produção
+npm run build
+
+# 6. Fluxo manual (dev server rodando: npm run dev)
+# - /cadastro → criar conta
+# - /entrar → login com ana@vidaplena.local / Vital8@dev
+# - /app/configuracoes → convidar membro, copiar link
+# - /convite/[token] → aceitar convite (aba anônima)
+# - Header → trocar organização com bruno@multi.local
+# - Aba Auditoria → verificar eventos registrados
+```
+
+## Pendências (fases futuras)
+
+- Envio de convite por e-mail transacional
+- Google OAuth
+- Campos PHI criptografados (Fase 2 — pacientes)
+- Módulos Agenda, Pacientes, Prontuário, Financeiro, etc.
