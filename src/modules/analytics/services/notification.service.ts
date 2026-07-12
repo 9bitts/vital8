@@ -24,9 +24,13 @@ export async function countUnread(organizationId: string, userId: string) {
   });
 }
 
-export async function markRead(notificationId: string, userId: string) {
+export async function markRead(
+  notificationId: string,
+  organizationId: string,
+  userId: string,
+) {
   return adminPrisma.userNotification.updateMany({
-    where: { id: notificationId, userId },
+    where: { id: notificationId, organizationId, userId },
     data: { readAt: new Date() },
   });
 }
@@ -160,7 +164,13 @@ export async function getNotificationPreferences(userId: string, organizationId:
 export async function saveNotificationPreferences(
   userId: string,
   organizationId: string,
-  input: { inAppEnabled?: boolean; emailEnabled?: boolean; categories?: Record<string, boolean> },
+  input: {
+    inAppEnabled?: boolean;
+    emailEnabled?: boolean;
+    pushEnabled?: boolean;
+    categories?: Record<string, boolean>;
+    pushCategories?: Record<string, boolean>;
+  },
 ) {
   return adminPrisma.userNotificationPreference.upsert({
     where: { userId_organizationId: { userId, organizationId } },
@@ -169,7 +179,9 @@ export async function saveNotificationPreferences(
       organizationId,
       inAppEnabled: input.inAppEnabled ?? true,
       emailEnabled: input.emailEnabled ?? false,
+      pushEnabled: input.pushEnabled ?? true,
       categories: input.categories ?? {},
+      pushCategories: input.pushCategories ?? {},
     },
     update: input,
   });

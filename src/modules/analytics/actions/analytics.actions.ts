@@ -144,7 +144,7 @@ export async function unreadCountAction() {
 
 export async function markNotificationReadAction(id: string) {
   const ctx = await requireAuth();
-  await markRead(id, ctx.userId);
+  await markRead(id, ctx.organizationId, ctx.userId);
   return { ok: true };
 }
 
@@ -162,6 +162,8 @@ export async function getNotificationPrefsAction() {
 export async function saveNotificationPrefsAction(input: {
   inAppEnabled: boolean;
   emailEnabled: boolean;
+  pushEnabled?: boolean;
+  pushCategories?: Record<string, boolean>;
 }) {
   const ctx = await requireAuth();
   return saveNotificationPreferences(ctx.userId, ctx.organizationId, input);

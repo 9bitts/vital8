@@ -27,6 +27,7 @@ import {
 } from "@/modules/scheduling/services/appointment.service";
 import { generateAvailableSlots } from "@/modules/scheduling/services/slot.service";
 import { isOccupyingStatus } from "@/modules/scheduling/services/conflict.service";
+import { branchFilter } from "@/modules/admin/services/branch.service";
 
 async function auditAppointment(
   action: string,
@@ -59,6 +60,7 @@ export async function listAppointmentsAction(input: {
 
   const where: Record<string, unknown> = {
     startsAt: { gte: input.start, lt: input.end },
+    ...branchFilter(ctx.branchId),
   };
 
   if (input.professionalIds?.length) {
