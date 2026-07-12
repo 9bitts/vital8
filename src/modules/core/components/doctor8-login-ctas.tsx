@@ -89,8 +89,8 @@ export function openDoctor8Register(entry: Doctor8LoginEntry) {
     window.location.href = entry.registerHref;
     return;
   }
-  // Clínica: o próprio fluxo OAuth leva ao /register/organization
-  // quando não há sessão na Doctor8.
+  // Clínica: OAuth leva ao login da Doctor8 (account_type=CLINIC).
+  // Após autenticação, o vital8 faz auto-provisioning no primeiro SSO.
   signInWithDoctor8(entry.orgType);
 }
 

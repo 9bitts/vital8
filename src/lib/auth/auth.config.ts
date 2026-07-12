@@ -13,7 +13,7 @@ export const authConfig = {
       if (!isProtected) return true;
       return !!auth?.user && !!auth.organizationId;
     },
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.name = user.name;
@@ -22,21 +22,7 @@ export const authConfig = {
         token.branchId = user.branchId ?? null;
       }
 
-      if (trigger === "update" && session) {
-        const updateSession = session as {
-          organizationId?: string;
-          role?: Role;
-          branchId?: string | null;
-        };
-
-        if (updateSession.organizationId && updateSession.role) {
-          token.organizationId = updateSession.organizationId;
-          token.role = updateSession.role;
-        }
-        if (updateSession.branchId !== undefined) {
-          token.branchId = updateSession.branchId;
-        }
-      }
+      // Session updates with membership validation run in auth.ts (Node handler).
 
       return token;
     },

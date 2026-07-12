@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { headers } from "next/headers";
 import type { Role } from "@/generated/prisma/client";
 import { authConfig } from "@/lib/auth/auth.config";
 import {
@@ -7,8 +8,15 @@ import {
   type Doctor8Profile,
   isDoctor8B2BRole,
 } from "@/lib/auth/doctor8-provider";
+import {
+  applyValidatedSessionUpdate,
+  type SessionUpdatePayload,
+} from "@/lib/auth/jwt-session-update";
 import { adminPrisma } from "@/lib/db/admin-client";
 import { verifyPassword } from "@/lib/auth/password";
+import { isValidCnpj, stripCnpj } from "@/lib/cnpj";
+import { checkLoginRateLimit } from "@/lib/security/login-rate-limit";
+import { slugify } from "@/lib/utils";
 import { loginSchema } from "@/modules/core/schemas/auth.schema";
 import { createAuditLog } from "@/modules/core/services/audit.service";
 
@@ -68,6 +76,162 @@ function findMembershipByCnpj(
   );
 }
 
+async function validateBranchForOrganization(
+  branchId: string,
+  organizationId: string,
+): Promise<boolean> {
+  const branch = await adminPrisma.branch.findFirst({
+    where: { id: branchId, organizationId, isActive: true },
+    select: { id: true },
+  });
+  return !!branch;
+}
+
+async function uniqueOrgSlug(base: string): Promise<string> {
+  const slug = slugify(base);
+  let suffix = 0;
+
+  while (true) {
+    const candidate = suffix === 0 ? slug : `${slug}-${suffix}`;
+    const existing = await adminPrisma.organization.findUnique({
+      where: { slug: candidate },
+    });
+    if (!existing) return candidate;
+    suffix += 1;
+  }
+}
+
+function mapDoctor8MemberRoleToVital8(
+  orgMemberRole: string | null | undefined,
+): Role | null {
+  if (orgMemberRole === "OWNER") return "OWNER";
+  if (orgMemberRole === "ADMIN") return "ADMIN";
+  return null;
+}
+
+async function provisionClinicFromDoctor8(
+  profile: Doctor8Profile,
+  email: string,
+): Promise<{ userId: string; organizationId: string } | null> {
+  if (profile.org_type !== "CLINIC" || !profile.org_cnpj) {
+    return null;
+  }
+
+  const cnpj = stripCnpj(profile.org_cnpj);
+  if (!isValidCnpj(cnpj)) {
+    return null;
+  }
+
+  const orgName = profile.org_name?.trim() || profile.org_razao_social?.trim();
+  if (!orgName) {
+    return null;
+  }
+
+  const trialEndsAt = new Date();
+  trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
+  const existingUser = await adminPrisma.user.findFirst({
+    where: { email, deletedAt: null },
+  });
+
+  if (existingUser) {
+    const vital8Role = mapDoctor8MemberRoleToVital8(profile.org_member_role);
+    if (!vital8Role) {
+      return null;
+    }
+
+    const existingOrg = await adminPrisma.organization.findFirst({
+      where: {
+        documentNumber: cnpj,
+        isActive: true,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (existingOrg) {
+      return null;
+    }
+
+    const slug = await uniqueOrgSlug(orgName);
+    const organization = await adminPrisma.$transaction(async (tx) => {
+      const org = await tx.organization.create({
+        data: {
+          name: orgName,
+          slug,
+          type: "CLINICA",
+          documentType: "CNPJ",
+          documentNumber: cnpj,
+          email,
+          trialEndsAt,
+        },
+      });
+
+      await tx.membership.create({
+        data: {
+          userId: existingUser.id,
+          organizationId: org.id,
+          role: vital8Role,
+        },
+      });
+
+      return org;
+    });
+
+    await createAuditLog({
+      action: "user.provisioned_from_doctor8",
+      userId: existingUser.id,
+      organizationId: organization.id,
+      metadata: { sso: "doctor8", cnpj, orgMemberRole: profile.org_member_role },
+    });
+
+    return { userId: existingUser.id, organizationId: organization.id };
+  }
+
+  const slug = await uniqueOrgSlug(orgName);
+  const result = await adminPrisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        name: profile.name?.trim() || orgName,
+        email,
+      },
+    });
+
+    const organization = await tx.organization.create({
+      data: {
+        name: orgName,
+        slug,
+        type: "CLINICA",
+        documentType: "CNPJ",
+        documentNumber: cnpj,
+        email,
+        trialEndsAt,
+      },
+    });
+
+    await tx.membership.create({
+      data: {
+        userId: user.id,
+        organizationId: organization.id,
+        role: "OWNER",
+      },
+    });
+
+    return { user, organization };
+  });
+
+  await createAuditLog({
+    action: "user.provisioned_from_doctor8",
+    userId: result.user.id,
+    organizationId: result.organization.id,
+    metadata: { sso: "doctor8", cnpj, createdUser: true },
+  });
+
+  return {
+    userId: result.user.id,
+    organizationId: result.organization.id,
+  };
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   providers: [
@@ -85,14 +249,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         const { email, password } = parsed.data;
+        const normalizedEmail = email.toLowerCase();
+
+        const headerList = await headers();
+        const ip =
+          headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+          headerList.get("x-real-ip") ??
+          "unknown";
+        const limit = checkLoginRateLimit(normalizedEmail, ip);
+        if (!limit.allowed) {
+          return null;
+        }
+
         const user = await adminPrisma.user.findFirst({
-          where: { email: email.toLowerCase(), deletedAt: null },
+          where: { email: normalizedEmail, deletedAt: null },
         });
 
         if (!user?.passwordHash) {
           await createAuditLog({
             action: "user.login_failed",
-            metadata: { email },
+            metadata: { email: normalizedEmail },
           });
           return null;
         }
@@ -102,7 +278,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           await createAuditLog({
             action: "user.login_failed",
             userId: user.id,
-            metadata: { email },
+            metadata: { email: normalizedEmail },
           });
           return null;
         }
@@ -164,39 +340,60 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return "/entrar?error=Doctor8SemConta";
       }
 
-      const user = await adminPrisma.user.findFirst({
+      let resolvedUser = await adminPrisma.user.findFirst({
         where: { email, deletedAt: null },
       });
 
-      if (!user) {
-        console.warn(
-          "SSO doctor8 bloqueado: usuário não cadastrado, sub=",
-          p?.sub,
-        );
+      if (!resolvedUser) {
+        const provisioned = await provisionClinicFromDoctor8(p, email);
+        if (!provisioned) {
+          console.warn(
+            "SSO doctor8 bloqueado: usuário não cadastrado, sub=",
+            p?.sub,
+          );
+          return "/entrar?error=Doctor8SemConta";
+        }
+        resolvedUser = await adminPrisma.user.findFirst({
+          where: { email, deletedAt: null },
+        });
+      }
+
+      if (!resolvedUser) {
         return "/entrar?error=Doctor8SemConta";
       }
 
-      const memberships = await getActiveMembershipsWithOrg(user.id);
-      if (memberships.length === 0) {
-        console.warn(
-          "SSO doctor8 bloqueado: sem membership ativo, sub=",
-          p?.sub,
-        );
-        return "/entrar?error=Doctor8SemOrganizacao";
-      }
+      let membership = findMembershipByCnpj(
+        await getActiveMembershipsWithOrg(resolvedUser.id),
+        p.org_cnpj,
+      );
 
-      const membership = findMembershipByCnpj(memberships, p.org_cnpj);
       if (!membership) {
-        console.warn(
-          "SSO doctor8 bloqueado: CNPJ divergente, sub=",
-          p?.sub,
+        const provisioned = await provisionClinicFromDoctor8(p, email);
+        if (!provisioned) {
+          const memberships = await getActiveMembershipsWithOrg(resolvedUser.id);
+          console.warn(
+            "SSO doctor8 bloqueado:",
+            memberships.length === 0 ? "sem membership" : "CNPJ divergente",
+            "sub=",
+            p?.sub,
+          );
+          return memberships.length === 0
+            ? "/entrar?error=Doctor8SemOrganizacao"
+            : "/entrar?error=Doctor8CnpjDivergente";
+        }
+
+        membership = findMembershipByCnpj(
+          await getActiveMembershipsWithOrg(resolvedUser.id),
+          p.org_cnpj,
         );
-        return "/entrar?error=Doctor8CnpjDivergente";
+        if (!membership) {
+          return "/entrar?error=Doctor8CnpjDivergente";
+        }
       }
 
       await createAuditLog({
         action: "user.login",
-        userId: user.id,
+        userId: resolvedUser.id,
         organizationId: membership.organizationId,
         metadata: {
           sso: "doctor8",
@@ -247,19 +444,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
 
       if (trigger === "update" && session) {
-        const updateSession = session as {
-          organizationId?: string;
-          role?: Role;
-          branchId?: string | null;
-        };
-
-        if (updateSession.organizationId && updateSession.role) {
-          token.organizationId = updateSession.organizationId;
-          token.role = updateSession.role;
-        }
-        if (updateSession.branchId !== undefined) {
-          token.branchId = updateSession.branchId;
-        }
+        return applyValidatedSessionUpdate(
+          token,
+          session as SessionUpdatePayload,
+          {
+            resolveMembership: async (userId, organizationId) => {
+              const membership = await resolveActiveMembership(
+                userId,
+                organizationId,
+              );
+              if (!membership) return null;
+              return {
+                organizationId: membership.organizationId,
+                role: membership.role,
+              };
+            },
+            validateBranch: validateBranchForOrganization,
+          },
+        );
       }
 
       return token;
