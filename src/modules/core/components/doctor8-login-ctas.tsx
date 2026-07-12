@@ -63,6 +63,8 @@ export function resolveDoctor8SsoError(code: string | undefined): string | null 
       return "Sua conta não está vinculada a nenhuma clínica ativa no vital8.";
     case "Doctor8CnpjDivergente":
       return "O CNPJ da sua conta Doctor8 não confere com o da organização no vital8. Contate o suporte.";
+    case "Doctor8OrganizacaoInativa":
+      return "Sua organização Doctor8 aguarda aprovação ou está suspensa. Acesso ao vital8 indisponível.";
     case "AccessDenied":
       return "Não foi possível entrar com Doctor8. Tente novamente ou use e-mail e senha.";
     default:

@@ -323,6 +323,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return "/entrar?error=Doctor8EmailNaoVerificado";
       }
 
+      if (p?.verified === false) {
+        console.warn(
+          "SSO doctor8 bloqueado: organização não operacional, sub=",
+          p?.sub,
+        );
+        return "/entrar?error=Doctor8OrganizacaoInativa";
+      }
+
       if (!isDoctor8B2BRole(p?.role) || !p?.org_cnpj) {
         console.warn(
           "SSO doctor8 bloqueado: conta não B2B ou sem CNPJ, sub=",

@@ -20,4 +20,9 @@ test.describe("doctor8 SSO errors", () => {
     await page.goto("/entrar?error=Doctor8CnpjDivergente");
     await expect(page.getByText(/CNPJ.*Doctor8.*não confere/i)).toBeVisible();
   });
+
+  test("maps Doctor8OrganizacaoInativa error code", async ({ page }) => {
+    await page.goto("/entrar?error=Doctor8OrganizacaoInativa");
+    await expect(page.getByText(/aguarda aprovação|suspensa/i)).toBeVisible();
+  });
 });
