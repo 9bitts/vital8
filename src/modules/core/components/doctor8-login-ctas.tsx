@@ -19,9 +19,8 @@ export const DOCTOR8_CNPJ_LOGINS = [
     description: "Consultórios e clínicas cadastradas na Doctor8",
     icon: Building2,
     orgType: "CLINIC",
-    // Sem href: usa o fluxo OAuth (a Doctor8 direciona para
-    // /register/organization com state e PKCE gerados na hora).
     href: null,
+    registerPath: "/register/organization",
   },
   {
     id: "empresa",
@@ -30,6 +29,7 @@ export const DOCTOR8_CNPJ_LOGINS = [
     icon: Briefcase,
     orgType: "EMPLOYER",
     href: `${DOCTOR8_BASE_URL}/empresas/login`,
+    registerPath: null,
   },
   {
     id: "farmacia",
@@ -38,6 +38,7 @@ export const DOCTOR8_CNPJ_LOGINS = [
     icon: Pill,
     orgType: "PHARMACY",
     href: `${DOCTOR8_BASE_URL}/farmacias/cadastro`,
+    registerPath: null,
   },
   {
     id: "laboratorio",
@@ -46,6 +47,7 @@ export const DOCTOR8_CNPJ_LOGINS = [
     icon: FlaskConical,
     orgType: "LABORATORY",
     href: `${DOCTOR8_BASE_URL}/laboratorios/cadastro`,
+    registerPath: null,
   },
 ] as const;
 
@@ -79,11 +81,34 @@ export function signInWithDoctor8(orgType?: Doctor8OrgType) {
   );
 }
 
-export function openDoctor8Login(entry: Doctor8LoginEntry) {
+async function openClinicaDoctor8Register() {
+  const result = await signIn(
+    "doctor8",
+    { redirect: false, callbackUrl: "/app" },
+    { account_type: "CLINIC" },
+  );
+
+  if (result?.url) {
+    const authorize = new URL(result.url);
+    const callbackPath = authorize.pathname + authorize.search;
+    window.location.href = `${DOCTOR8_BASE_URL}/register/organization?callbackUrl=${encodeURIComponent(callbackPath)}`;
+    return;
+  }
+
+  signInWithDoctor8("CLINIC");
+}
+
+export async function openDoctor8Login(entry: Doctor8LoginEntry) {
+  if (entry.id === "clinica") {
+    await openClinicaDoctor8Register();
+    return;
+  }
+
   if (entry.href) {
     window.location.href = entry.href;
     return;
   }
+
   signInWithDoctor8(entry.orgType);
 }
 
@@ -124,7 +149,7 @@ export function Doctor8LoginCtas({
                 type="button"
                 variant="ghost"
                 className="h-auto w-full justify-start gap-3 px-3 py-2.5 text-left"
-                onClick={() => openDoctor8Login(entry)}
+                onClick={() => void openDoctor8Login(entry)}
               >
                 <Icon className="h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
                 <span className="min-w-0">
@@ -155,7 +180,7 @@ export function Doctor8LoginCtas({
             <button
               key={entry.id}
               type="button"
-              onClick={() => openDoctor8Login(entry)}
+              onClick={() => void openDoctor8Login(entry)}
               className="rounded-lg border border-zinc-200 bg-white p-4 text-left transition hover:border-zinc-300 hover:bg-zinc-50"
             >
               <div className="mb-2 flex items-center gap-2 text-zinc-900">

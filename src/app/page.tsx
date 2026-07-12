@@ -153,7 +153,7 @@ export default function HomePage() {
               <button
                 key={entry.id}
                 type="button"
-                onClick={() => openDoctor8Login(entry)}
+                onClick={() => void openDoctor8Login(entry)}
                 className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-left backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.08] hover:shadow-[0_0_40px_rgba(255,255,255,0.08)]"
               >
                 <div
