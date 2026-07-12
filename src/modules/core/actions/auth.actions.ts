@@ -5,7 +5,8 @@ import { hashPassword } from "@/lib/auth/password";
 import { getRequestMeta, requireAuth } from "@/lib/auth/guards";
 import type { ActionResult } from "@/lib/auth/guards";
 import { adminPrisma } from "@/lib/db/admin-client";
-import { checkLoginRateLimit } from "@/lib/security/login-rate-limit";
+import { checkLoginRateLimit, checkSignupRateLimit } from "@/lib/security/login-rate-limit";
+import { isValidCnpj, stripCnpj } from "@/lib/cnpj";
 import { slugify } from "@/lib/utils";
 import {
   loginSchema,
@@ -31,7 +32,7 @@ async function uniqueSlug(base: string): Promise<string> {
 export async function signupAction(
   userInput: unknown,
   orgInput: unknown,
-): Promise<ActionResult<{ email: string }>> {
+): Promise<ActionResult<{ email: string; verificationPending?: boolean }>> {
   const userParsed = signupUserSchema.safeParse(userInput);
   if (!userParsed.success) {
     return { success: false, error: userParsed.error.issues[0]?.message ?? "Dados inválidos" };
@@ -45,11 +46,46 @@ export async function signupAction(
   const { name, email, password } = userParsed.data;
   const normalizedEmail = email.toLowerCase();
 
+  const meta = await getRequestMeta();
+  const limit = checkSignupRateLimit(
+    normalizedEmail,
+    meta.ipAddress ?? "unknown",
+  );
+  if (!limit.allowed) {
+    return { success: false, error: "Muitas tentativas. Aguarde e tente novamente." };
+  }
+
   const existing = await adminPrisma.user.findUnique({
     where: { email: normalizedEmail },
   });
   if (existing) {
-    return { success: false, error: "E-mail já cadastrado" };
+    return {
+      success: true,
+      data: {
+        email: normalizedEmail,
+        verificationPending: true as const,
+      },
+    };
+  }
+
+  if (orgParsed.data.documentType === "CNPJ") {
+    const cnpj = stripCnpj(orgParsed.data.documentNumber);
+    if (!isValidCnpj(cnpj)) {
+      return { success: false, error: "CNPJ inválido" };
+    }
+  }
+
+  const normalizedDocument = orgParsed.data.documentNumber.replace(/\D/g, "");
+  const duplicateDocument = await adminPrisma.organization.findFirst({
+    where: {
+      documentNumber: normalizedDocument,
+      isActive: true,
+      deletedAt: null,
+    },
+    select: { id: true },
+  });
+  if (duplicateDocument) {
+    return { success: false, error: "Documento já cadastrado em outra organização" };
   }
 
   const passwordHash = await hashPassword(password);
@@ -74,7 +110,7 @@ export async function signupAction(
         slug,
         type: orgParsed.data.type,
         documentType: orgParsed.data.documentType,
-        documentNumber: orgParsed.data.documentNumber.replace(/\D/g, ""),
+        documentNumber: normalizedDocument,
         phone: orgParsed.data.phone || null,
         email: orgParsed.data.email || normalizedEmail,
         trialEndsAt,

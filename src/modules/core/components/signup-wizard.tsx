@@ -35,6 +35,7 @@ export function SignupWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [userData, setUserData] = useState({
@@ -54,11 +55,20 @@ export function SignupWizard() {
 
   async function handleSubmit() {
     setError(null);
+    setInfo(null);
     setLoading(true);
 
     const result = await signupAction(userData, orgData);
     if (!result.success) {
       setError(result.error);
+      setLoading(false);
+      return;
+    }
+
+    if (result.data?.verificationPending) {
+      setInfo(
+        "Se este e-mail estiver cadastrado, siga as instruções enviadas para confirmá-lo antes de entrar.",
+      );
       setLoading(false);
       return;
     }
@@ -200,6 +210,7 @@ export function SignupWizard() {
               />
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
+            {info && <p className="text-sm text-zinc-700">{info}</p>}
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setStep(1)}>
                 Voltar

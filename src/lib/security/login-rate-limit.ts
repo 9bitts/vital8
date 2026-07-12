@@ -16,3 +16,17 @@ export function checkLoginRateLimit(email: string, ip: string): { allowed: boole
   }
   return { allowed: true };
 }
+
+export function checkSignupRateLimit(email: string, ip: string): { allowed: boolean; retryAfterMs?: number } {
+  const emailKey = `signup:email:${email.toLowerCase()}`;
+  const ipKey = `signup:ip:${ip}`;
+  const byEmail = checkRateLimit(emailKey, MAX_ATTEMPTS, WINDOW_MS);
+  if (!byEmail.allowed) {
+    return { allowed: false, retryAfterMs: byEmail.retryAfterMs };
+  }
+  const byIp = checkRateLimit(ipKey, MAX_ATTEMPTS * 3, WINDOW_MS);
+  if (!byIp.allowed) {
+    return { allowed: false, retryAfterMs: byIp.retryAfterMs };
+  }
+  return { allowed: true };
+}

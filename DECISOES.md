@@ -356,3 +356,19 @@ Relatório completo: `SECURITY-AUDIT.md` · Backlog: `SECURITY-BACKLOG.md`
 - Hash de busca (`cpfHash`, `phoneSearch`) não reversível mas identificável — necessário para dedup/LGPD export
 
 **Suíte de regressão:** `src/lib/security/security.test.ts` (SSRF, cron, login limit, PHI log, markRead).
+
+## Cadastro local — verificação de e-mail (2026-07-12)
+
+**Decisão:** Manter login imediato após cadastro no trial; **não** bloquear credentials por `emailVerified` nem enviar e-mail transacional nesta fase.
+
+**Motivo:** Vital8 ainda não possui serviço de e-mail (ver decisão “Convites sem e-mail transacional”); trial exige acesso imediato.
+
+**Implementado mesmo assim:** rate-limit no signup, anti-enumeração de e-mail (resposta genérica de sucesso), validação de CNPJ com dígito verificador, unicidade de `documentNumber` entre organizações ativas, rate-limit de login no `authorize()` credentials.
+
+**Reversibilidade:** Quando houver provedor de e-mail, adicionar token + bloqueio de login para contas com `emailVerified IS NULL`.
+
+## SSO Doctor8 — auto-provisioning de clínica (2026-07-12)
+
+**Decisão:** Opção A — no primeiro SSO B2B (`org_type=CLINIC`, e-mail verificado, CNPJ válido), criar User/Organization/Membership local se inexistentes; para usuário existente sem org com aquele CNPJ, provisionar apenas se `org_member_role` for OWNER ou ADMIN.
+
+**Motivo:** Round-trip “cadastrei clínica no doctor8 → entro no vital8” sem tela de vinculação manual.
