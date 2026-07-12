@@ -4,6 +4,7 @@ import { Space_Grotesk } from "next/font/google";
 import {
   DOCTOR8_CNPJ_LOGINS,
   openDoctor8Login,
+  openDoctor8Register,
 } from "@/modules/core/components/doctor8-login-ctas";
 
 const spaceGrotesk = Space_Grotesk({
@@ -13,6 +14,86 @@ const spaceGrotesk = Space_Grotesk({
 
 const INFINITY_PATH =
   "M130 130 C130 62 250 62 250 130 C250 198 370 198 370 130 C370 62 250 62 250 130 C250 198 130 198 130 130 Z";
+
+const INFINITY_SCENE = (
+  <>
+    <defs>
+      <linearGradient id="inf-grad" x1="0" y1="0" x2="500" y2="260" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+        <stop offset="30%" stopColor="#a5b4fc" stopOpacity="0.55" />
+        <stop offset="55%" stopColor="#71717a" stopOpacity="0.35" />
+        <stop offset="80%" stopColor="#93c5fd" stopOpacity="0.5" />
+        <stop offset="100%" stopColor="#ffffff" stopOpacity="0.9" />
+      </linearGradient>
+      <linearGradient id="inf-grad-2" x1="500" y1="260" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#ffffff" stopOpacity="0.7" />
+        <stop offset="50%" stopColor="#818cf8" stopOpacity="0.25" />
+        <stop offset="100%" stopColor="#ffffff" stopOpacity="0.6" />
+      </linearGradient>
+      <filter id="inf-glow" x="-60%" y="-60%" width="220%" height="220%">
+        <feGaussianBlur stdDeviation="8" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+      <filter id="inf-glow-wide" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur stdDeviation="22" />
+      </filter>
+    </defs>
+
+    {/* Halo difuso ao fundo */}
+    <path
+      d={INFINITY_PATH}
+      stroke="url(#inf-grad)"
+      strokeWidth="14"
+      fill="none"
+      filter="url(#inf-glow-wide)"
+      opacity="0.35"
+    />
+
+    {/* Traço principal com glow e respiração */}
+    <path
+      d={INFINITY_PATH}
+      stroke="url(#inf-grad)"
+      strokeWidth="2.5"
+      fill="none"
+      filter="url(#inf-glow)"
+      strokeLinecap="round"
+      style={{ animation: "inf-breathe 6s ease-in-out infinite" }}
+    />
+
+    {/* Fluxo de energia — tracejado animado */}
+    <path
+      d={INFINITY_PATH}
+      stroke="url(#inf-grad)"
+      strokeWidth="3.5"
+      fill="none"
+      strokeLinecap="round"
+      strokeDasharray="40 560"
+      style={{ animation: "inf-flow 7s linear infinite" }}
+      filter="url(#inf-glow)"
+    />
+    <path
+      d={INFINITY_PATH}
+      stroke="url(#inf-grad-2)"
+      strokeWidth="2"
+      fill="none"
+      strokeLinecap="round"
+      strokeDasharray="18 582"
+      style={{ animation: "inf-flow-rev 9s linear infinite" }}
+    />
+
+    {/* Contorno fino estático */}
+    <path
+      d={INFINITY_PATH}
+      stroke="url(#inf-grad-2)"
+      strokeWidth="0.75"
+      fill="none"
+      strokeOpacity="0.5"
+    />
+  </>
+);
 
 export default function HomePage() {
   return (
@@ -47,93 +128,28 @@ export default function HomePage() {
         aria-hidden
         className="pointer-events-none absolute inset-0 flex items-center justify-center"
       >
+        {/* Mobile: infinito inteiro, mais largo que a tela */}
+        <svg
+          viewBox="95 35 310 190"
+          preserveAspectRatio="xMidYMid meet"
+          className="w-[175vw] max-w-none sm:hidden"
+        >
+          {INFINITY_SCENE}
+        </svg>
+        {/* Desktop: cobre a tela toda com corte proporcional */}
         <svg
           viewBox="95 35 310 190"
           preserveAspectRatio="xMidYMid slice"
-          className="h-full w-full scale-105"
+          className="hidden h-full w-full scale-105 sm:block"
         >
-          <defs>
-            <linearGradient id="inf-grad" x1="0" y1="0" x2="500" y2="260" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-              <stop offset="30%" stopColor="#a5b4fc" stopOpacity="0.55" />
-              <stop offset="55%" stopColor="#71717a" stopOpacity="0.35" />
-              <stop offset="80%" stopColor="#93c5fd" stopOpacity="0.5" />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.9" />
-            </linearGradient>
-            <linearGradient id="inf-grad-2" x1="500" y1="260" x2="0" y2="0" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.7" />
-              <stop offset="50%" stopColor="#818cf8" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.6" />
-            </linearGradient>
-            <filter id="inf-glow" x="-60%" y="-60%" width="220%" height="220%">
-              <feGaussianBlur stdDeviation="8" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            <filter id="inf-glow-wide" x="-80%" y="-80%" width="260%" height="260%">
-              <feGaussianBlur stdDeviation="22" />
-            </filter>
-          </defs>
-
-          {/* Halo difuso ao fundo */}
-          <path
-            d={INFINITY_PATH}
-            stroke="url(#inf-grad)"
-            strokeWidth="14"
-            fill="none"
-            filter="url(#inf-glow-wide)"
-            opacity="0.35"
-          />
-
-          {/* Traço principal com glow e respiração */}
-          <path
-            d={INFINITY_PATH}
-            stroke="url(#inf-grad)"
-            strokeWidth="2.5"
-            fill="none"
-            filter="url(#inf-glow)"
-            strokeLinecap="round"
-            style={{ animation: "inf-breathe 6s ease-in-out infinite" }}
-          />
-
-          {/* Fluxo de energia — tracejado animado */}
-          <path
-            d={INFINITY_PATH}
-            stroke="url(#inf-grad)"
-            strokeWidth="3.5"
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray="40 560"
-            style={{ animation: "inf-flow 7s linear infinite" }}
-            filter="url(#inf-glow)"
-          />
-          <path
-            d={INFINITY_PATH}
-            stroke="url(#inf-grad-2)"
-            strokeWidth="2"
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray="18 582"
-            style={{ animation: "inf-flow-rev 9s linear infinite" }}
-          />
-
-          {/* Contorno fino estático */}
-          <path
-            d={INFINITY_PATH}
-            stroke="url(#inf-grad-2)"
-            strokeWidth="0.75"
-            fill="none"
-            strokeOpacity="0.5"
-          />
+          {INFINITY_SCENE}
         </svg>
       </div>
 
       {/* Conteúdo */}
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-16">
         <div className="mb-12 text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium tracking-widest text-zinc-400 uppercase backdrop-blur">
+          <div className="mb-6 inline-flex max-w-[92vw] items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-center text-[10px] font-medium tracking-wide text-zinc-400 uppercase backdrop-blur sm:text-xs sm:tracking-widest">
             Vital8Erp · Gestão completa para quem cuida de vidas
           </div>
           <h1
@@ -150,11 +166,18 @@ export default function HomePage() {
           {DOCTOR8_CNPJ_LOGINS.map((entry) => {
             const Icon = entry.icon;
             return (
-              <button
+              <div
                 key={entry.id}
-                type="button"
-                onClick={() => void openDoctor8Login(entry)}
-                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-left backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.08] hover:shadow-[0_0_40px_rgba(255,255,255,0.08)]"
+                role="button"
+                tabIndex={0}
+                onClick={() => openDoctor8Login(entry)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openDoctor8Login(entry);
+                  }
+                }}
+                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-left backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.08] hover:shadow-[0_0_40px_rgba(255,255,255,0.08)]"
               >
                 <div
                   aria-hidden
@@ -169,13 +192,25 @@ export default function HomePage() {
                 <p className="mt-1 text-sm text-zinc-400">
                   {entry.description}
                 </p>
-                <span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors group-hover:text-zinc-300">
-                  Entrar com Doctor8
-                  <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-0.5">
-                    →
+                <div className="mt-4 flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors group-hover:text-zinc-300">
+                    Entrar com Doctor8
+                    <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-0.5">
+                      →
+                    </span>
                   </span>
-                </span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDoctor8Register(entry);
+                    }}
+                    className="text-xs text-zinc-600 underline-offset-2 transition-colors hover:text-zinc-300 hover:underline"
+                  >
+                    Cadastre-se
+                  </button>
+                </div>
+              </div>
             );
           })}
         </div>

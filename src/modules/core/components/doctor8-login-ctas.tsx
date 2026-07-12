@@ -19,8 +19,8 @@ export const DOCTOR8_CNPJ_LOGINS = [
     description: "Consultórios e clínicas cadastradas na Doctor8",
     icon: Building2,
     orgType: "CLINIC",
-    href: null,
-    registerPath: "/register/organization",
+    // Cadastro de clínica usa o fluxo OAuth (state/PKCE gerados na hora).
+    registerHref: null,
   },
   {
     id: "empresa",
@@ -28,8 +28,7 @@ export const DOCTOR8_CNPJ_LOGINS = [
     description: "Saúde ocupacional e empresas parceiras",
     icon: Briefcase,
     orgType: "EMPLOYER",
-    href: `${DOCTOR8_BASE_URL}/empresas/login`,
-    registerPath: null,
+    registerHref: `${DOCTOR8_BASE_URL}/empresas/login`,
   },
   {
     id: "farmacia",
@@ -37,8 +36,7 @@ export const DOCTOR8_CNPJ_LOGINS = [
     description: "Drogaria e rede de farmácias",
     icon: Pill,
     orgType: "PHARMACY",
-    href: `${DOCTOR8_BASE_URL}/farmacias/cadastro`,
-    registerPath: null,
+    registerHref: `${DOCTOR8_BASE_URL}/farmacias/cadastro`,
   },
   {
     id: "laboratorio",
@@ -46,8 +44,7 @@ export const DOCTOR8_CNPJ_LOGINS = [
     description: "Análises clínicas e exames de imagem",
     icon: FlaskConical,
     orgType: "LABORATORY",
-    href: `${DOCTOR8_BASE_URL}/laboratorios/cadastro`,
-    registerPath: null,
+    registerHref: `${DOCTOR8_BASE_URL}/laboratorios/cadastro`,
   },
 ] as const;
 
@@ -81,34 +78,20 @@ export function signInWithDoctor8(orgType?: Doctor8OrgType) {
   );
 }
 
-async function openClinicaDoctor8Register() {
-  const result = await signIn(
-    "doctor8",
-    { redirect: false, callbackUrl: "/app" },
-    { account_type: "CLINIC" },
-  );
-
-  if (result?.url) {
-    const authorize = new URL(result.url);
-    const callbackPath = authorize.pathname + authorize.search;
-    window.location.href = `${DOCTOR8_BASE_URL}/register/organization?callbackUrl=${encodeURIComponent(callbackPath)}`;
-    return;
-  }
-
-  signInWithDoctor8("CLINIC");
+// Login: sempre via SSO — autentica na Doctor8 e volta com sessão no vital8.
+export function openDoctor8Login(entry: Doctor8LoginEntry) {
+  signInWithDoctor8(entry.orgType);
 }
 
-export async function openDoctor8Login(entry: Doctor8LoginEntry) {
-  switch (entry.id) {
-    case "clinica":
-      await openClinicaDoctor8Register();
-      break;
-    case "empresa":
-    case "farmacia":
-    case "laboratorio":
-      window.location.href = entry.href;
-      break;
+// Cadastro: abre a página de registro correspondente na Doctor8.
+export function openDoctor8Register(entry: Doctor8LoginEntry) {
+  if (entry.registerHref) {
+    window.location.href = entry.registerHref;
+    return;
   }
+  // Clínica: o próprio fluxo OAuth leva ao /register/organization
+  // quando não há sessão na Doctor8.
+  signInWithDoctor8(entry.orgType);
 }
 
 type Doctor8LoginCtasProps = {
