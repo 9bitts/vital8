@@ -41,12 +41,16 @@ export function resolveDoctor8SsoError(code: string | undefined): string | null 
   switch (code) {
     case "Doctor8EmailNaoVerificado":
       return "Confirme seu e-mail na Doctor8 antes de entrar.";
+    case "Doctor8ContaInvalida":
+      return "Apenas contas Doctor8 de clínica, empresa, farmácia ou laboratório podem acessar o vital8.";
     case "Doctor8SemConta":
-      return "Seu e-mail Doctor8 não está cadastrado no vital8. Peça um convite ao administrador da sua clínica.";
+      return "Seu e-mail Doctor8 não está cadastrado no vital8. Peça um convite ao administrador.";
     case "Doctor8SemOrganizacao":
-      return "Sua conta não está vinculada a nenhuma clínica ativa. Peça um convite ao administrador.";
+      return "Sua conta não está vinculada a nenhuma clínica ativa no vital8.";
+    case "Doctor8CnpjDivergente":
+      return "O CNPJ da sua conta Doctor8 não confere com o da organização no vital8. Contate o suporte.";
     case "AccessDenied":
-      return "Não foi possível entrar com Doctor8. Verifique se sua conta é de profissional de saúde e tente novamente.";
+      return "Não foi possível entrar com Doctor8. Tente novamente ou use e-mail e senha.";
     default:
       return null;
   }

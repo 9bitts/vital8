@@ -5,6 +5,7 @@ import { authConfig } from "@/lib/auth/auth.config";
 import {
   doctor8Provider,
   type Doctor8Profile,
+  isDoctor8B2BRole,
 } from "@/lib/auth/doctor8-provider";
 import { adminPrisma } from "@/lib/db/admin-client";
 import { verifyPassword } from "@/lib/auth/password";
@@ -32,6 +33,10 @@ async function resolveActiveMembership(userId: string, organizationId?: string) 
   }
 
   return memberships[0];
+}
+
+function normalizeDocumentNumber(value: string): string {
+  return value.replace(/\D/g, "");
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -113,6 +118,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return "/entrar?error=Doctor8EmailNaoVerificado";
       }
 
+      if (!isDoctor8B2BRole(p?.role) || !p?.org_cnpj) {
+        console.warn(
+          "SSO doctor8 bloqueado: conta não B2B ou sem CNPJ, sub=",
+          p?.sub,
+        );
+        return "/entrar?error=Doctor8ContaInvalida";
+      }
+
       const email = p?.email?.toLowerCase();
       if (!email) {
         console.warn(
@@ -128,8 +141,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       if (!user) {
         console.warn(
-          "SSO doctor8 bloqueado: usuário não cadastrado, email=",
-          email,
+          "SSO doctor8 bloqueado: usuário não cadastrado, sub=",
+          p?.sub,
         );
         return "/entrar?error=Doctor8SemConta";
       }
@@ -137,17 +150,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       const membership = await resolveActiveMembership(user.id);
       if (!membership) {
         console.warn(
-          "SSO doctor8 bloqueado: sem membership ativo, userId=",
-          user.id,
+          "SSO doctor8 bloqueado: sem membership ativo, sub=",
+          p?.sub,
         );
         return "/entrar?error=Doctor8SemOrganizacao";
+      }
+
+      const organization = await adminPrisma.organization.findFirst({
+        where: {
+          id: membership.organizationId,
+          deletedAt: null,
+        },
+        select: { documentNumber: true },
+      });
+
+      if (
+        !organization ||
+        normalizeDocumentNumber(organization.documentNumber) !==
+          normalizeDocumentNumber(p.org_cnpj)
+      ) {
+        console.warn(
+          "SSO doctor8 bloqueado: CNPJ divergente, sub=",
+          p?.sub,
+        );
+        return "/entrar?error=Doctor8CnpjDivergente";
       }
 
       await createAuditLog({
         action: "user.login",
         userId: user.id,
         organizationId: membership.organizationId,
-        metadata: { sso: "doctor8" },
+        metadata: {
+          sso: "doctor8",
+          orgType: p.org_type,
+          cnpj: p.org_cnpj,
+        },
       });
 
       return true;

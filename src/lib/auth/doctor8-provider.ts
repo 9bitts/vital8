@@ -8,6 +8,22 @@ export interface Doctor8Profile {
   picture?: string;
   role?: string;
   verified?: boolean;
+  org_type?: "CLINIC" | "EMPLOYER" | "PHARMACY" | "LABORATORY" | null;
+  org_cnpj?: string | null;
+  org_name?: string | null;
+  org_razao_social?: string | null;
+  org_member_role?: string | null;
+}
+
+const B2B_ROLES = new Set([
+  "ORGANIZATION",
+  "EMPLOYER",
+  "PHARMACY_STORE",
+  "LABORATORY",
+]);
+
+export function isDoctor8B2BRole(role: string | undefined): boolean {
+  return !!role && B2B_ROLES.has(role);
 }
 
 export function doctor8Provider(): OAuth2Config<Doctor8Profile> {
