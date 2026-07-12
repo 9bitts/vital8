@@ -28,3 +28,7 @@ export function checkRateLimit(
 export function resetRateLimit(key: string): void {
   buckets.delete(key);
 }
+
+export function resetAllRateLimitsForTests(): void {
+  buckets.clear();
+}
