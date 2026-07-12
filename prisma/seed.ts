@@ -1,6 +1,8 @@
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "../src/lib/auth/password";
+import { encryptPHI } from "../src/lib/crypto/phi";
+import { hashCpf, normalizeSearchName } from "../src/lib/crypto/search-hash";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -16,6 +18,14 @@ async function main() {
   console.log("🌱 Iniciando seed do Vital8...");
 
   await prisma.auditLog.deleteMany();
+  await prisma.patientMedication.deleteMany();
+  await prisma.chronicCondition.deleteMany();
+  await prisma.allergy.deleteMany();
+  await prisma.patientDocument.deleteMany();
+  await prisma.patientConsent.deleteMany();
+  await prisma.patientInsurancePlan.deleteMany();
+  await prisma.patientGuardian.deleteMany();
+  await prisma.patient.deleteMany();
   await prisma.invitation.deleteMany();
   await prisma.membership.deleteMany();
   await prisma.organization.deleteMany();
@@ -119,11 +129,85 @@ async function main() {
       organizationId: orgVidaPlena.id,
       userId: ownerVidaPlena.id,
       entityType: "System",
-      metadata: { version: "phase-1" },
+      metadata: { version: "phase-2" },
     },
   });
 
-  console.log("✅ Seed concluído");
+  const phones1 = encryptPHI(JSON.stringify([{ number: "11987654321", label: "Celular" }]));
+  const phones2 = encryptPHI(JSON.stringify([{ number: "11976543210", label: "Celular" }]));
+
+  await prisma.patient.createMany({
+    data: [
+      {
+        organizationId: orgVidaPlena.id,
+        searchName: normalizeSearchName("Roberto Almeida"),
+        fullName: "Roberto Almeida",
+        cpfEncrypted: encryptPHI("52998224725"),
+        cpfHash: hashCpf("52998224725"),
+        birthDate: new Date("1985-03-15"),
+        sex: "MASCULINO",
+        phonesEncrypted: phones1,
+        phoneSearch: "11987654321",
+        tags: ["VIP"],
+        isActive: true,
+      },
+      {
+        organizationId: orgVidaPlena.id,
+        searchName: normalizeSearchName("Fernanda Costa"),
+        fullName: "Fernanda Costa",
+        cpfEncrypted: encryptPHI("39053344705"),
+        cpfHash: hashCpf("39053344705"),
+        birthDate: new Date("1990-07-12"),
+        sex: "FEMININO",
+        phonesEncrypted: phones2,
+        phoneSearch: "11976543210",
+        tags: ["Convênio"],
+        isActive: true,
+      },
+      {
+        organizationId: orgVidaPlena.id,
+        searchName: normalizeSearchName("Paciente Rápido"),
+        fullName: "Paciente Rápido",
+        phonesEncrypted: encryptPHI(JSON.stringify([{ number: "11999990099", label: "Principal" }])),
+        phoneSearch: "11999990099",
+        isIncomplete: true,
+        isActive: true,
+      },
+    ],
+  });
+
+  const roberto = await prisma.patient.findFirst({
+    where: { organizationId: orgVidaPlena.id, fullName: "Roberto Almeida" },
+  });
+
+  if (roberto) {
+    const { encrypted, search } = {
+      encrypted: encryptPHI("123456789012345"),
+      search: "012345",
+    };
+    await prisma.patientInsurancePlan.create({
+      data: {
+        organizationId: orgVidaPlena.id,
+        patientId: roberto.id,
+        insurerName: "Unimed",
+        planName: "Premium",
+        cardNumberEncrypted: encrypted,
+        cardNumberSearch: search,
+        isPrimary: true,
+      },
+    });
+
+    await prisma.allergy.create({
+      data: {
+        organizationId: orgVidaPlena.id,
+        patientId: roberto.id,
+        substance: "Dipirona",
+        severity: "Alta",
+      },
+    });
+  }
+
+  console.log("✅ Seed concluído (Fase 2 — pacientes incluídos)");
   console.log("");
   console.log("Contas de desenvolvimento (senha para todas):", DEV_PASSWORD);
   console.log("- ana@vidaplena.local (OWNER — Clínica Vida Plena)");

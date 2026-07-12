@@ -47,3 +47,38 @@ Registro de decisões tomadas na Fase 1 quando há trade-offs ou dependências d
 **Decisão:** `deletedAt: null` injetado automaticamente no tenant client apenas para models com soft delete (`Membership` nesta fase).
 
 **Motivo:** `Invitation` e `AuditLog` não possuem soft delete no schema da Fase 1.
+
+**Atualização Fase 2:** Todos os models de paciente possuem soft delete e estão registrados em `MODELS_WITH_SOFT_DELETE`.
+
+## Campos PHI e busca (Fase 2)
+
+**Decisão:** CPF, RG, telefones, e-mail, endereço e observações clínicas são criptografados com AES-256-GCM (`phi.ts`). Campos derivados em claro para busca:
+
+- `searchName` — nome normalizado (sem acentos, minúsculas)
+- `cpfHash` — SHA-256 do CPF normalizado, unique por `(organizationId, cpfHash)`
+- `phoneSearch` — dígitos do telefone principal (busca parcial)
+- `cardNumberSearch` — últimos 6 dígitos da carteirinha
+
+**Trade-off:** Telefone e carteirinha parcialmente indexáveis em claro para performance de busca na recepção. CPF nunca fica em claro no banco.
+
+**Reversibilidade:** Busca full-text cifrada (ex.: envelope encryption + blind index) pode substituir campos derivados se política de segurança exigir.
+
+## Upload de documentos (Fase 2)
+
+**Decisão:** Adapter `LocalStorageAdapter` grava em `uploads/{orgId}/{patientId}/`. Produção: trocar por S3/R2 via mesma interface em `src/lib/integrations/storage/`.
+
+**Motivo:** Prompt proíbe serviços pagos obrigatórios; filesystem local funciona 100% em dev.
+
+## Anonimização LGPD vs delete físico
+
+**Decisão:** Direito de eliminação implementado como anonimização (`anonymizedAt` + mascaramento PHI + soft delete), preservando trilha de auditoria e integridade referencial para fases futuras (agenda, prontuário).
+
+## Feature flags por plano
+
+**Decisão:** `features.service.ts` mapeia `Plan` (TRIAL/STARTER/PRO/ENTERPRISE) para módulos habilitados. Fase 2 registra flags; enforcement completo nas fases avançadas (TISS, BI, telemedicina).
+
+## Mesclagem de duplicados
+
+**Decisão:** Registro secundário recebe soft delete + nota criptografada com referência ao primário; relacionamentos são reparentados. Sem delete físico.
+
+**Motivo:** Auditoria e conformidade SBIS/CFM (imutabilidade de trilha).

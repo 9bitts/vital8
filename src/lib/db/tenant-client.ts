@@ -5,9 +5,27 @@ const TENANT_SCOPED_MODELS = new Set([
   "Membership",
   "Invitation",
   "AuditLog",
+  "Patient",
+  "PatientGuardian",
+  "PatientInsurancePlan",
+  "PatientConsent",
+  "PatientDocument",
+  "Allergy",
+  "ChronicCondition",
+  "PatientMedication",
 ]);
 
-const MODELS_WITH_SOFT_DELETE = new Set(["Membership"]);
+const MODELS_WITH_SOFT_DELETE = new Set([
+  "Membership",
+  "Patient",
+  "PatientGuardian",
+  "PatientInsurancePlan",
+  "PatientConsent",
+  "PatientDocument",
+  "Allergy",
+  "ChronicCondition",
+  "PatientMedication",
+]);
 
 type QueryArgs = {
   where?: Record<string, unknown>;

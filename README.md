@@ -1,15 +1,16 @@
-# Vital8 — Fase 1 (Fundação)
+# Vital8 — Fase 2 (Pacientes)
 
-ERP SaaS multi-tenant vertical em saúde. Esta fase entrega: multi-tenancy, autenticação, RBAC, auditoria, criptografia PHI (utilitário) e shell da aplicação.
+ERP SaaS multi-tenant vertical em saúde. Fases entregues: **Fase 1 (Fundação)** + **Fase 2 (Pacientes / CRM clínico)**.
 
 ## Stack
 
 - Next.js 14 (App Router)
 - TypeScript strict
-- Prisma + PostgreSQL
+- Prisma 7 + `@prisma/adapter-pg` + PostgreSQL
 - Auth.js v5 (JWT)
 - Zod
 - Tailwind CSS + shadcn/ui
+- Vitest
 
 ## Pré-requisitos (Windows / PowerShell)
 
@@ -72,14 +73,22 @@ Senha para todas: `Vital8@dev`
 | bruno@multi.local | ADMIN + FINANCEIRO | Ambas (testar switcher) |
 | carla@vidaplena.local | RECEPCAO | Clínica Vida Plena |
 
+Pacientes seed (Clínica Vida Plena): Roberto Almeida, Fernanda Costa, Paciente Rápido (incompleto).
+
 ## Testes
 
 ```powershell
-# Testes unitários de criptografia PHI
+# Criptografia PHI
 npm test -- src/lib/crypto/phi.test.ts
 
-# Testes de isolamento multi-tenant (requer DATABASE_URL)
+# Hash/busca (CPF, nome)
+npm test -- src/lib/crypto/search-hash.test.ts
+
+# Isolamento multi-tenant (core)
 npm test -- src/lib/db/tenant-isolation.test.ts
+
+# Isolamento multi-tenant (pacientes)
+npm test -- src/modules/patients/patient-tenant-isolation.test.ts
 
 # Todos os testes
 npm test
@@ -92,11 +101,14 @@ npx tsc --noEmit
 
 ```
 src/
-  app/                 # Rotas Next.js
-  modules/core/        # Organização, membros, convites, auditoria
-  lib/db/              # admin-client, tenant-client
-  lib/auth/            # Auth.js, guards
-  lib/crypto/          # PHI encryption
+  app/                      # Rotas Next.js
+  modules/core/             # Organização, membros, convites, auditoria
+  modules/patients/         # CRM clínico (Fase 2)
+  lib/db/                   # admin-client, tenant-client
+  lib/auth/                 # Auth.js, guards
+  lib/crypto/               # PHI encryption + search hash
+  lib/features/             # Feature flags por plano
+  lib/integrations/storage/ # Upload local (dev) / S3 futuro
 prisma/
   schema.prisma
   seed.ts
@@ -119,7 +131,9 @@ Configure as mesmas variáveis de ambiente nos dois serviços.
 
 Ver [DECISOES.md](./DECISOES.md)
 
-## CHECKLIST DE VERIFICAÇÃO
+---
+
+## CHECKLIST DE VERIFICAÇÃO — Fase 2 (Pacientes)
 
 Execute em PowerShell na raiz do projeto:
 
@@ -130,27 +144,32 @@ npx prisma migrate status
 # 2. TypeScript sem erros
 npx tsc --noEmit
 
-# 3. Testes de criptografia PHI
-npm test -- src/lib/crypto/phi.test.ts
+# 3. Testes
+npm test
 
-# 4. Testes de isolamento multi-tenant
-npm test -- src/lib/db/tenant-isolation.test.ts
-
-# 5. Build de produção
+# 4. Build de produção
 npm run build
 
-# 6. Fluxo manual (dev server rodando: npm run dev)
-# - /cadastro → criar conta
-# - /entrar → login com ana@vidaplena.local / Vital8@dev
-# - /app/configuracoes → convidar membro, copiar link
-# - /convite/[token] → aceitar convite (aba anônima)
-# - Header → trocar organização com bruno@multi.local
-# - Aba Auditoria → verificar eventos registrados
+# 5. Fluxo manual (dev server: npm run dev)
+# Login: ana@vidaplena.local / Vital8@dev
+# - /app/pacientes → listar, buscar por nome/CPF/telefone
+# - Cadastro rápido → nome + telefone → redireciona para editar
+# - Novo paciente → cadastro completo
+# - Abrir paciente → ficha, alertas de saúde, linha do tempo
+# - Editar → abas contato, convênio, saúde, documentos, LGPD
+# - /app/pacientes/aniversariantes → Fernanda (12/07) se data coincidir
+# - /app/pacientes/duplicados → mesclagem (criar duplicata de teste)
+# - /app/pacientes/importar → CSV com colunas nome,cpf,telefone
+# - Exportar LGPD (OWNER) → download JSON
+# - Configurações → Auditoria → eventos patient.*
+# - Trocar org (bruno@multi.local) → pacientes isolados por tenant
 ```
 
 ## Pendências (fases futuras)
 
+- Fase 3: Agenda e Recepção
+- Fase 4: Prontuário Eletrônico
+- Fase 5: Financeiro
 - Envio de convite por e-mail transacional
 - Google OAuth
-- Campos PHI criptografados (Fase 2 — pacientes)
-- Módulos Agenda, Pacientes, Prontuário, Financeiro, etc.
+- Storage S3 em produção

@@ -37,6 +37,39 @@ enum Role {
   LEITURA
 }
 
+enum Sex {
+  MASCULINO
+  FEMININO
+  INTERSEX
+  NAO_INFORMADO
+}
+
+enum MaritalStatus {
+  SOLTEIRO
+  CASADO
+  DIVORCIADO
+  VIUVO
+  UNIAO_ESTAVEL
+  OUTRO
+  NAO_INFORMADO
+}
+
+enum ConsentChannel {
+  PRESENCIAL
+  DIGITAL
+  TELEFONE
+  IMPORTACAO
+}
+
+enum PatientDocCategory {
+  RG
+  CPF
+  COMPROVANTE_RESIDENCIA
+  CARTEIRINHA_CONVENIO
+  EXAME
+  OUTRO
+}
+
 model Organization {
   id             String           @id @default(cuid())
   name           String
@@ -58,7 +91,196 @@ model Organization {
   memberships Membership[]
   invitations Invitation[]
   auditLogs   AuditLog[]
+  patients    Patient[]
 
+  @@index([deletedAt])
+}
+
+model Patient {
+  id               String         @id @default(cuid())
+  organizationId   String
+  searchName       String
+  fullName         String
+  socialName       String?
+  cpfEncrypted     String?
+  cpfHash          String?
+  rgEncrypted      String?
+  birthDate        DateTime?      @db.Date
+  sex              Sex?
+  genderIdentity   String?
+  maritalStatus    MaritalStatus?
+  profession       String?
+  phonesEncrypted  String?
+  phoneSearch      String?
+  emailEncrypted   String?
+  addressEncrypted String?
+  photoUrl         String?
+  notesEncrypted   String?
+  referralSource   String?
+  tags             String[]       @default([])
+  isIncomplete     Boolean        @default(false)
+  isActive         Boolean        @default(true)
+  anonymizedAt     DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
+
+  organization      Organization           @relation(fields: [organizationId], references: [id])
+  guardians         PatientGuardian[]
+  insurancePlans    PatientInsurancePlan[]
+  consents          PatientConsent[]
+  documents         PatientDocument[]
+  allergies         Allergy[]
+  chronicConditions ChronicCondition[]
+  medications       PatientMedication[]
+
+  @@unique([organizationId, cpfHash])
+  @@index([organizationId, searchName])
+  @@index([organizationId, birthDate])
+  @@index([organizationId, phoneSearch])
+  @@index([deletedAt])
+}
+
+model PatientGuardian {
+  id             String    @id @default(cuid())
+  organizationId String
+  patientId      String
+  fullName       String
+  cpfEncrypted   String?
+  phoneEncrypted String?
+  relationship   String
+  isPrimary      Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([deletedAt])
+}
+
+model PatientInsurancePlan {
+  id                  String    @id @default(cuid())
+  organizationId      String
+  patientId           String
+  insurerName         String
+  planName            String?
+  cardNumberEncrypted String
+  cardNumberSearch    String?
+  validUntil          DateTime? @db.Date
+  isPrimary           Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([organizationId, cardNumberSearch])
+  @@index([deletedAt])
+}
+
+model PatientConsent {
+  id             String         @id @default(cuid())
+  organizationId String
+  patientId      String
+  termKey        String
+  termVersion    String
+  purpose        String
+  channel        ConsentChannel
+  grantedAt      DateTime       @default(now())
+  revokedAt      DateTime?
+  recordedById   String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([deletedAt])
+}
+
+model PatientDocument {
+  id             String             @id @default(cuid())
+  organizationId String
+  patientId      String
+  category       PatientDocCategory @default(OUTRO)
+  fileName       String
+  mimeType       String
+  fileSize       Int
+  storageKey     String
+  uploadedById   String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  deletedAt      DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([deletedAt])
+}
+
+model Allergy {
+  id             String    @id @default(cuid())
+  organizationId String
+  patientId      String
+  substance      String
+  severity       String?
+  notesEncrypted String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([deletedAt])
+}
+
+model ChronicCondition {
+  id             String    @id @default(cuid())
+  organizationId String
+  patientId      String
+  condition      String
+  cidCode        String?
+  diagnosedAt    DateTime? @db.Date
+  notesEncrypted String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([deletedAt])
+}
+
+model PatientMedication {
+  id             String    @id @default(cuid())
+  organizationId String
+  patientId      String
+  name           String
+  dosage         String?
+  frequency      String?
+  route          String?
+  isActive       Boolean   @default(true)
+  notesEncrypted String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
   @@index([deletedAt])
 }
 

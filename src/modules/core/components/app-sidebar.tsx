@@ -29,8 +29,7 @@ const navItems = [
     href: "/app/pacientes",
     label: "Pacientes",
     icon: Users,
-    active: false,
-    badge: "Em breve",
+    active: true,
   },
   {
     href: "/app/prontuario",
