@@ -12,6 +12,8 @@ export const API_SCOPES = [
   "insurance:read",
   "stock:read",
   "webhooks:manage",
+  "fhir:read",
+  "lab:inbound",
 ] as const;
 
 export type ApiScope = (typeof API_SCOPES)[number];

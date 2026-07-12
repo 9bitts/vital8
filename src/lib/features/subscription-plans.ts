@@ -6,12 +6,13 @@ export type PlanLimits = {
   maxUsers: number;
   maxBranches: number;
   maxActivePatients: number;
+  maxLandingPages?: number;
 };
 
 export const SUBSCRIPTION_PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   BASICO: { maxUsers: 5, maxBranches: 1, maxActivePatients: 500 },
-  PRO: { maxUsers: 20, maxBranches: 3, maxActivePatients: 5000 },
-  ENTERPRISE: { maxUsers: 100, maxBranches: 20, maxActivePatients: 50000 },
+  PRO: { maxUsers: 20, maxBranches: 3, maxActivePatients: 5000, maxLandingPages: 3 },
+  ENTERPRISE: { maxUsers: 100, maxBranches: 20, maxActivePatients: 50000, maxLandingPages: 999 },
 };
 
 export const PLAN_PRICING_CENTS: Record<SubscriptionPlan, { monthly: number; annual: number }> = {
@@ -54,6 +55,8 @@ export const SUBSCRIPTION_FEATURES: Record<SubscriptionPlan, FeatureFlag[]> = {
     "online_scheduling",
     "patient_portal",
     "public_api",
+    "pwa",
+    "marketing",
   ],
   ENTERPRISE: [
     "patients",
@@ -69,5 +72,8 @@ export const SUBSCRIPTION_FEATURES: Record<SubscriptionPlan, FeatureFlag[]> = {
     "public_api",
     "webhooks",
     "ai",
+    "interoperability",
+    "pwa",
+    "marketing",
   ],
 };

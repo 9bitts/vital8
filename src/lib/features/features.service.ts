@@ -13,7 +13,10 @@ export type FeatureFlag =
   | "patient_portal"
   | "public_api"
   | "webhooks"
-  | "ai";
+  | "ai"
+  | "interoperability"
+  | "pwa"
+  | "marketing";
 
 const PLAN_FEATURES: Record<Plan, FeatureFlag[]> = {
   TRIAL: [
@@ -35,6 +38,8 @@ const PLAN_FEATURES: Record<Plan, FeatureFlag[]> = {
     "online_scheduling",
     "patient_portal",
     "public_api",
+    "pwa",
+    "marketing",
   ],
   ENTERPRISE: [
     "patients",
@@ -50,6 +55,9 @@ const PLAN_FEATURES: Record<Plan, FeatureFlag[]> = {
     "public_api",
     "webhooks",
     "ai",
+    "interoperability",
+    "pwa",
+    "marketing",
   ],
 };
 

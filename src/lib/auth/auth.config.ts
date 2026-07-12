@@ -8,8 +8,9 @@ export const authConfig = {
   },
   callbacks: {
     authorized({ auth, request }) {
-      const isApp = request.nextUrl.pathname.startsWith("/app");
-      if (!isApp) return true;
+      const path = request.nextUrl.pathname;
+      const isProtected = path.startsWith("/app") || path.startsWith("/m");
+      if (!isProtected) return true;
       return !!auth?.user && !!auth.organizationId;
     },
     async jwt({ token, user, trigger, session }) {

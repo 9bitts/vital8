@@ -2,7 +2,7 @@
 
 Plataforma multi-tenant completa: pacientes, agenda, prontuário, financeiro, TISS, estoque, relacionamento, BI e administração SaaS.
 
-**Fases entregues:** 1–12 (IA aplicada: secretária virtual, copiloto clínico, gestão inteligente).
+**Fases entregues:** 1–13 (Interoperabilidade FHIR/RNDS/laboratórios + IA aplicada).
 
 ## Módulos
 
@@ -484,3 +484,84 @@ Fluxo manual (ENTERPRISE — `ana@vidaplena.local` / `Vital8@dev`):
 8. **Faturamento → Glosas** — botão "Rascunho IA" na justificativa
 9. **Ctrl+K** — busca natural ("agenda amanhã", "vencidos")
 10. Reduzir `monthlyTokenLimit` em AiSettings e confirmar bloqueio ao estourar
+
+## CHECKLIST DE VERIFICAÇÃO — Fase 13 (Interoperabilidade FHIR / RNDS / Laboratórios)
+
+```powershell
+npx prisma migrate status
+npx tsc --noEmit
+npm test
+npm run build
+npm run db:seed
+npm run dev
+```
+
+Fluxo manual (ENTERPRISE — `ana@vidaplena.local` / `Vital8@dev`):
+
+1. **Configurações → Interoperabilidade** — salvar credencial RNDS mock (homologação) e testar conexão
+2. Verificar monitor: submissão **aceita**, **rejeitada** (OperationOutcome traduzido) e **em fila** do seed
+3. Reenviar submissão rejeitada/DLQ pelo botão **Reenviar**
+4. Confirmar atendimento **assinado** no seed gera Bundle RAC válido (job ou enfileiramento manual)
+5. **Laboratórios** — informar ID de um `ExamRequest` do seed → simular fluxo ponta a ponta
+6. Verificar notificação ao profissional solicitante e liberação no portal do paciente
+7. Consumir FHIR nativo: `GET /api/v1/fhir/Patient` com API key da Fase 11 (escopo `patients:read` + org ENTERPRISE)
+8. Receber resultado via API: `POST /api/v1/inbound/lab-results` com escopo `lab:inbound`
+
+Guia credenciamento real: [`docs/rnds.md`](docs/rnds.md)
+
+## CHECKLIST DE VERIFICAÇÃO — Fase 14 (PWA Mobile + Agenda Offline)
+
+```powershell
+npx prisma migrate status
+npx tsc --noEmit
+npm test
+npm run build
+npm run test:e2e
+npm run dev
+```
+
+Fluxo manual (PRO/ENTERPRISE — `ana@vidaplena.local` / `Vital8@dev`):
+
+1. **Instalar PWA** — 2º acesso exibe banner discreto; em Android: menu → "Adicionar à tela inicial"; em iOS: Compartilhar → "Adicionar à Tela de Início"
+2. Abrir `/m/hoje` — bottom nav (Hoje · Agenda · Pacientes · Notificações · Perfil)
+3. Verificar banner de **última sincronização** online
+4. **Push** — Centro de notificações (sino) → habilitar Push e categorias (check-in, exame, etc.)
+5. **Modo avião** no celular (ou DevTools offline):
+   - Agenda do dia visível do cache
+   - Confirmar consulta / marcar falta → enfileirado
+   - Criar agendamento provisório em `/m/agenda`
+   - `/m/atendimento/*` e prontuário **inacessíveis** offline
+6. Reconectar — fila sincroniza; verificar no desktop `/app/agenda`
+7. **Conflito** — ocupar mesmo slot no servidor enquanto offline → pendência em Perfil/Agenda (não sobrescreve)
+8. **Dark mode** — respeita `prefers-color-scheme`
+9. **Logout** — purge do IndexedDB (cache offline zerado)
+10. **Admin** — `/app/sistema` lista telemetria de sincronizações mobile
+
+**Lighthouse PWA (produção):** `npm run build && npm start` → Chrome DevTools → Lighthouse → PWA ≥ 90
+
+## CHECKLIST DE VERIFICAÇÃO — Fase 15 (Marketing e Captação)
+
+```powershell
+npx prisma migrate status
+npx tsc --noEmit
+npm test
+npm run build
+npm run db:seed
+npm run dev
+```
+
+Fluxo manual (PRO/ENTERPRISE — `ana@vidaplena.local` / `Vital8@dev`):
+
+1. **Landing** — `/app/marketing/landing-pages` → abrir `/lp/clinica-vida-plena/consulta-inicial`
+2. **Captura com UTM** — `?utm_source=google&utm_medium=cpc&utm_campaign=verao2026`
+3. **Cadência** — job `/api/jobs/process` ou aguardar 5 min → `LeadFollowUpLog`
+4. **Kanban** — `/app/marketing/leads` arrastar card entre colunas
+5. **Converter** — botão converter lead → paciente (dedup telefone/CPF)
+6. **Funil** — agendamento → comparecimento → status CONVERTIDO
+7. **Dashboard** — `/app/marketing/dashboard` CAC/LTV/ROI
+8. **Indicação** — `/app/marketing/indicacoes` · 2 indicações no seed
+9. **NPS promotor** — nota ≥9 dispara convite Google (detrator nunca)
+10. **Link rastreável** — `/r/verao26` incrementa cliques
+11. **Mini-site** — `/c/clinica-vida-plena` · `sitemap.xml` em `/c/clinica-vida-plena/sitemap.xml`
+12. **Embed externo** — `<script src="/embed/lead-form.js" data-org="clinica-vida-plena" async></script>`
+13. **Reativação** — dashboard lista inativos 6+ meses e retorno de campanha

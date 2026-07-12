@@ -77,6 +77,11 @@ export async function submitNpsResponse(input: {
         metadata: { score: input.score, surveyId: survey.id },
       },
     });
+  } else if (input.score >= 9) {
+    const { handleNpsReputation } = await import(
+      "@/modules/marketing/services/reputation.service"
+    );
+    await handleNpsReputation(survey.organizationId, survey.patientId, input.score);
   }
 
   return response;

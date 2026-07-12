@@ -10,6 +10,11 @@ import {
   listBookableProfessionals,
   listBookableServices,
 } from "../services/online-booking.service";
+import {
+  captureOnlineBookingMarketing,
+  patientExistedBeforeBooking,
+} from "@/modules/marketing/services/booking-marketing.service";
+import type { UtmCapture } from "@/modules/marketing/lib/tracking";
 
 function clientIp(): string {
   const h = headers();
@@ -73,10 +78,16 @@ export async function confirmBookingAction(input: {
   professionalId: string;
   serviceId: string;
   startsAtIso: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
 }) {
   const ctx = await getOnlineBookingContext(input.orgSlug);
   if (!ctx) throw new Error("Agendamento indisponível");
   const ip = clientIp();
+  const existedBefore = await patientExistedBeforeBooking(ctx.org.id, input.phone);
   const { patientId } = await verifyPortalOtp({
     organizationId: ctx.org.id,
     phone: input.phone,
@@ -93,6 +104,27 @@ export async function confirmBookingAction(input: {
     startsAt: new Date(input.startsAtIso),
     requiresApproval: ctx.config.requiresApproval,
   });
+
+  const utm: UtmCapture = {
+    utmSource: input.utmSource,
+    utmMedium: input.utmMedium,
+    utmCampaign: input.utmCampaign,
+    utmTerm: input.utmTerm,
+    utmContent: input.utmContent,
+  };
+
+  await captureOnlineBookingMarketing({
+    organizationId: ctx.org.id,
+    patientId,
+    appointmentId: appointment.id,
+    phone: input.phone,
+    fullName: input.fullName,
+    isNewPatient: !existedBefore,
+    serviceId: input.serviceId,
+    utm,
+    ip,
+  });
+
   return {
     appointmentId: appointment.id,
     pendingApproval: ctx.config.requiresApproval,

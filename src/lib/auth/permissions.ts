@@ -10,7 +10,8 @@ export type PermissionModule =
   | "faturamento"
   | "estoque"
   | "relatorios"
-  | "configuracoes";
+  | "configuracoes"
+  | "marketing";
 
 export type PermissionMatrix = Partial<
   Record<PermissionModule, Partial<Record<PermissionAction, boolean>>>
@@ -36,6 +37,7 @@ const MODULE_ACTIONS: Record<PermissionModule, PermissionAction[]> = {
   estoque: ["view", "create", "edit", "delete"],
   relatorios: ["view"],
   configuracoes: ["view", "edit"],
+  marketing: ["view", "create", "edit", "delete", "approve"],
 };
 
 function fullModule(actions: PermissionAction[], enabled = true): Partial<Record<PermissionAction, boolean>> {
@@ -88,6 +90,7 @@ export const DEFAULT_PROFILES: Record<
       estoque: { view: false },
       relatorios: { view: true },
       configuracoes: { view: false },
+      marketing: fullModule(MODULE_ACTIONS.marketing),
     },
     limits: { maxDiscountPercent: 10, maxRefundCents: 0, allowSqueeze: true },
   },

@@ -82,6 +82,12 @@ const navItems: NavItem[] = [
     active: true,
   },
   {
+    href: "/app/marketing/leads",
+    label: "Marketing",
+    icon: Activity,
+    active: true,
+  },
+  {
     href: "/app/relatorios",
     label: "Relatórios",
     icon: BarChart3,

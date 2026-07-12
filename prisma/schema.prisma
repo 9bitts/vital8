@@ -450,6 +450,24 @@ model Organization {
   aiUsageMonthly      AiUsageMonthly[]
   aiFaqs              AiFaq[]
   aiConversations     AiConversation[]
+  rndsCredentials     RndsCredential[]
+  rndsSubmissions     RndsSubmission[]
+  interoperabilitySettings InteroperabilitySettings?
+  labReconciliations  LabResultReconciliation[]
+  mobileSyncLogs      MobileSyncLog[]
+  mobileIdempotencyRecords MobileIdempotencyRecord[]
+  pushSubscriptions   PushSubscription[]
+  leadSources         LeadSource[]
+  marketingCampaigns  MarketingCampaign[]
+  leads               Lead[]
+  leadInteractions    LeadInteraction[]
+  leadFollowUpLogs    LeadFollowUpLog[]
+  landingPages        LandingPage[]
+  trackedLinks        TrackedLink[]
+  referralProgram     ReferralProgram?
+  referrals           Referral[]
+  testimonials        Testimonial[]
+  leadOptOuts         LeadOptOut[]
 
   @@index([deletedAt])
 }
@@ -462,6 +480,7 @@ model Patient {
   socialName       String?
   cpfEncrypted     String?
   cpfHash          String?
+  cnsEncrypted     String?
   rgEncrypted      String?
   birthDate        DateTime?      @db.Date
   sex              Sex?
@@ -475,6 +494,14 @@ model Patient {
   photoUrl         String?
   notesEncrypted   String?
   referralSource   String?
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  utmTerm          String?
+  utmContent       String?
+  leadSourceId     String?
+  marketingCampaignId String?
+  acquiredAt       DateTime?
   tags             String[]       @default([])
   isIncomplete     Boolean        @default(false)
   isActive         Boolean        @default(true)
@@ -512,6 +539,12 @@ model Patient {
   releasedDocuments ReleasedDocument[]
   dataCorrectionRequests PatientDataCorrectionRequest[]
   aiConversations AiConversation[]
+  leads           Lead[]
+  referralsMade   Referral[] @relation("ReferrerPatient")
+  referralsReceived Referral[] @relation("ReferredPatient")
+  testimonials    Testimonial[]
+  acquisitionSource LeadSource? @relation(fields: [leadSourceId], references: [id])
+  acquisitionCampaign MarketingCampaign? @relation(fields: [marketingCampaignId], references: [id])
 
   @@unique([organizationId, cpfHash])
   @@index([organizationId, searchName])
@@ -831,6 +864,7 @@ model Appointment {
   saleId              String?           @unique
   expectedAmount      Decimal?          @db.Decimal(10, 2)
   notes               String?
+  offlineProvisional  Boolean           @default(false)
   isSqueeze           Boolean           @default(false)
   recurrenceGroupId   String?
   rescheduledFromId   String?
@@ -1182,6 +1216,7 @@ model ExamRequest {
   patient      Patient          @relation(fields: [patientId], references: [id])
   items        ExamRequestItem[]
   results      ExamResult[]
+  labReconciliations LabResultReconciliation[]
 
   @@index([organizationId])
   @@index([encounterId])
@@ -1220,6 +1255,7 @@ model ExamResult {
   encounter    Encounter?        @relation(fields: [encounterId], references: [id])
   request      ExamRequest?      @relation(fields: [requestId], references: [id])
   values       ExamResultValue[]
+  labReconciliations LabResultReconciliation[]
 
   @@index([organizationId])
   @@index([patientId])
@@ -2314,6 +2350,7 @@ enum CommunicationOrigin {
   CAMPANHA
   LEMBRETE_RETORNO
   POS_ATENDIMENTO
+  LEAD_FOLLOWUP
 }
 
 enum AutomationTriggerEvent {
@@ -2322,6 +2359,9 @@ enum AutomationTriggerEvent {
   BIRTHDAY
   POST_ENCOUNTER_NPS
   OVERDUE_COLLECTION
+  LEAD_NEW
+  LEAD_NO_RESPONSE
+  LEAD_NO_SHOW
 }
 
 enum AutomationOffsetUnit {
@@ -2659,7 +2699,188 @@ enum NotificationType {
   CASH_REGISTER_OPEN
   TISS_BATCH_STALE
   RECEIVABLE_DUE
+  LAB_RESULT_RECEIVED
+  RNDS_SUBMISSION
+  LEAD_STALE
+  LEAD_TASK
   SYSTEM
+}
+
+enum RndsEnvironment {
+  HOMOLOGACAO
+  PRODUCAO
+}
+
+enum RndsCredentialStatus {
+  PENDENTE
+  HOMOLOGACAO
+  PRODUCAO
+  REVOGADO
+}
+
+enum RndsCertificateType {
+  A1
+  A3
+}
+
+enum RndsRegistrationType {
+  RAC
+  EXAM_RESULT
+}
+
+enum RndsSubmissionStatus {
+  FILA
+  ENVIADO
+  ACEITO
+  REJEITADO
+  ERRO
+  DLQ
+}
+
+enum LabReconciliationStatus {
+  PENDENTE
+  CONCILIADO
+  REJEITADO
+}
+
+model RndsCredential {
+  id                   String               @id @default(cuid())
+  organizationId       String
+  branchId             String?
+  certificateType      RndsCertificateType  @default(A1)
+  certificateEncrypted   String?
+  certificateReference String?
+  requesterId          String
+  environment          RndsEnvironment      @default(HOMOLOGACAO)
+  credentialStatus     RndsCredentialStatus @default(PENDENTE)
+  tokenExpiresAt       DateTime?
+  lastConnectionTestAt DateTime?
+  lastConnectionOk     Boolean              @default(false)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id])
+  branch       Branch?          @relation(fields: [branchId], references: [id])
+  submissions  RndsSubmission[]
+
+  @@index([organizationId])
+  @@index([branchId])
+}
+
+model InteroperabilitySettings {
+  id                        String   @id @default(cuid())
+  organizationId            String   @unique
+  autoSendRac               Boolean  @default(true)
+  autoSendExamResults       Boolean  @default(true)
+  examResultDeadlineHours   Int      @default(24)
+  labIntegrationEnabled     Boolean  @default(false)
+  labPollingEnabled         Boolean  @default(false)
+  labPollingIntervalMinutes Int      @default(30)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
+model RndsSubmission {
+  id               String               @id @default(cuid())
+  organizationId   String
+  credentialId     String
+  registrationType RndsRegistrationType
+  sourceType       String
+  sourceId         String
+  bundleJson       Json
+  protocol         String?
+  status           RndsSubmissionStatus @default(FILA)
+  responseJson     Json?
+  attemptCount     Int                  @default(0)
+  lastAttemptAt    DateTime?
+  nextRetryAt      DateTime?
+  errorMessage     String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id])
+  credential   RndsCredential @relation(fields: [credentialId], references: [id])
+
+  @@index([organizationId, status])
+  @@index([sourceType, sourceId])
+  @@index([nextRetryAt])
+  @@index([credentialId])
+}
+
+model LabResultReconciliation {
+  id                String                  @id @default(cuid())
+  organizationId    String
+  externalRequestId String?
+  inboundPayload    Json
+  status            LabReconciliationStatus @default(PENDENTE)
+  matchedRequestId  String?
+  matchedResultId   String?
+  ambiguityReason   String?
+  processedAt       DateTime?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  matchedRequest ExamRequest? @relation(fields: [matchedRequestId], references: [id])
+  matchedResult  ExamResult?  @relation(fields: [matchedResultId], references: [id])
+
+  @@index([organizationId, status])
+  @@index([externalRequestId])
+}
+
+model MobileSyncLog {
+  id               String   @id @default(cuid())
+  organizationId   String
+  userId           String
+  durationMs       Int
+  actionsApplied   Int      @default(0)
+  actionsRejected  Int      @default(0)
+  actionsPending   Int      @default(0)
+  metadata         Json     @default("{}")
+  createdAt        DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([userId])
+}
+
+model MobileIdempotencyRecord {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  idempotencyKey String
+  actionType     String
+  statusCode     Int
+  responseBody   Json
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([userId, idempotencyKey])
+  @@index([expiresAt])
+}
+
+model PushSubscription {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  endpoint       String   @unique
+  p256dh         String
+  auth           String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, userId])
 }
 
 model DailyOrgMetrics {
@@ -2772,7 +2993,9 @@ model UserNotificationPreference {
   organizationId String
   inAppEnabled   Boolean  @default(true)
   emailEnabled   Boolean  @default(false)
+  pushEnabled    Boolean  @default(true)
   categories     Json     @default("{}")
+  pushCategories Json     @default("{}")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -2832,6 +3055,7 @@ model Branch {
   stockLocations     StockLocation[]
   tissGuides         TissGuide[]
   tissBatches        TissBatch[]
+  rndsCredentials    RndsCredential[]
 
   @@index([organizationId])
   @@index([isActive])
@@ -3217,6 +3441,272 @@ model AiConversationMessage {
   @@index([organizationId])
 }
 
+enum LeadStatus {
+  NOVO
+  EM_CONTATO
+  AGENDOU
+  COMPARECEU
+  CONVERTIDO
+  PERDIDO
+}
+
+enum LeadInteractionType {
+  LIGACAO
+  WHATSAPP
+  EMAIL
+  NOTA
+}
+
+enum ReferralRewardType {
+  DESCONTO
+  CORTESIA
+}
+
+enum ReferralStatus {
+  PENDENTE
+  AGENDOU
+  COMPARECEU
+  PREMIADA
+  REJEITADA
+}
+
+enum TestimonialStatus {
+  SOLICITADO
+  RECEBIDO
+  APROVADO
+  PUBLICADO
+  REJEITADO
+}
+
+model LeadSource {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  campaigns    MarketingCampaign[]
+  leads        Lead[]
+  patients     Patient[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+}
+
+model MarketingCampaign {
+  id              String   @id @default(cuid())
+  organizationId  String
+  name            String
+  leadSourceId    String?
+  channel         String
+  periodStart     DateTime @db.Date
+  periodEnd       DateTime @db.Date
+  investmentCents Int      @default(0)
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  utmTerm         String?
+  utmContent      String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  leadSource   LeadSource?  @relation(fields: [leadSourceId], references: [id])
+  leads        Lead[]
+  trackedLinks TrackedLink[]
+  patients     Patient[]
+
+  @@index([organizationId])
+  @@index([leadSourceId])
+}
+
+model Lead {
+  id                  String     @id @default(cuid())
+  organizationId      String
+  branchId            String?
+  fullName            String
+  phoneSearch         String?
+  email               String?
+  interestServiceId   String?
+  leadSourceId        String?
+  marketingCampaignId String?
+  utmSource           String?
+  utmMedium           String?
+  utmCampaign         String?
+  utmTerm             String?
+  utmContent          String?
+  status              LeadStatus @default(NOVO)
+  lossReason          String?
+  assignedUserId      String?
+  marketingConsentAt  DateTime?
+  marketingConsentIp  String?
+  patientId           String?
+  appointmentId       String?
+  lastContactAt       DateTime?
+  lastStatusAt        DateTime   @default(now())
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  leadSource        LeadSource?        @relation(fields: [leadSourceId], references: [id])
+  marketingCampaign MarketingCampaign? @relation(fields: [marketingCampaignId], references: [id])
+  patient           Patient?           @relation(fields: [patientId], references: [id])
+  interactions      LeadInteraction[]
+  followUpLogs      LeadFollowUpLog[]
+  referrals         Referral[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, phoneSearch])
+  @@index([leadSourceId])
+  @@index([marketingCampaignId])
+  @@index([patientId])
+}
+
+model LeadInteraction {
+  id             String              @id @default(cuid())
+  organizationId String
+  leadId         String
+  type           LeadInteractionType
+  notes          String
+  userId         String
+  createdAt      DateTime            @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  lead         Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@index([organizationId])
+}
+
+model LeadFollowUpLog {
+  id             String               @id @default(cuid())
+  organizationId String
+  leadId         String
+  templateId     String?
+  channel        CommunicationChannel
+  renderedBody   String
+  status         CommunicationStatus  @default(FILA)
+  scheduledFor   DateTime?
+  sentAt         DateTime?
+  failReason     String?
+  idempotencyKey String               @unique
+  createdAt      DateTime             @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  lead         Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, leadId])
+  @@index([status, scheduledFor])
+}
+
+model LandingPage {
+  id              String    @id @default(cuid())
+  organizationId  String
+  slug            String
+  title           String
+  metaDescription String?
+  ogImageUrl      String?
+  blocks          Json      @default("[]")
+  theme           Json      @default("{}")
+  published       Boolean   @default(false)
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, published])
+}
+
+model TrackedLink {
+  id                  String   @id @default(cuid())
+  organizationId      String
+  code                String   @unique
+  marketingCampaignId String?
+  targetUrl           String
+  clickCount          Int      @default(0)
+  createdAt           DateTime @default(now())
+
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  marketingCampaign MarketingCampaign? @relation(fields: [marketingCampaignId], references: [id])
+
+  @@index([organizationId])
+}
+
+model ReferralProgram {
+  id                 String             @id @default(cuid())
+  organizationId     String             @unique
+  isActive           Boolean            @default(true)
+  rewardType         ReferralRewardType @default(DESCONTO)
+  rewardValue        String
+  maxPerPatientMonth Int                @default(3)
+  terms              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  referrals    Referral[]
+}
+
+model Referral {
+  id                 String         @id @default(cuid())
+  organizationId     String
+  programId          String
+  referrerPatientId  String
+  referredLeadId     String?
+  referredPatientId  String?
+  status             ReferralStatus @default(PENDENTE)
+  rewardedAt         DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  organization    Organization    @relation(fields: [organizationId], references: [id])
+  program         ReferralProgram @relation(fields: [programId], references: [id])
+  referrerPatient Patient         @relation("ReferrerPatient", fields: [referrerPatientId], references: [id])
+  referredLead    Lead?           @relation(fields: [referredLeadId], references: [id])
+  referredPatient Patient?        @relation("ReferredPatient", fields: [referredPatientId], references: [id])
+
+  @@index([organizationId])
+  @@index([referrerPatientId])
+}
+
+model Testimonial {
+  id             String            @id @default(cuid())
+  organizationId String
+  patientId      String?
+  authorName     String
+  content        String
+  consentAt      DateTime?
+  consentIp      String?
+  status         TestimonialStatus @default(SOLICITADO)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient?     @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId, status])
+}
+
+model LeadOptOut {
+  id             String   @id @default(cuid())
+  organizationId String
+  phoneSearch    String?
+  email          String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, phoneSearch])
+  @@index([organizationId, email])
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String
@@ -3234,7 +3724,11 @@ model User {
   auditLogs       AuditLog[]
   userNotifications UserNotification[]
   notificationPreferences UserNotificationPreference[]
+  pushSubscriptions       PushSubscription[]
+  mobileSyncLogs          MobileSyncLog[]
+  mobileIdempotencyRecords MobileIdempotencyRecord[]
   reportPreferences UserReportPreference[]
+  leadInteractions LeadInteraction[]
 
   @@index([deletedAt])
 }

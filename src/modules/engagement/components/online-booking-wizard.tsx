@@ -29,10 +29,19 @@ export function OnlineBookingWizard({ orgSlug }: Props) {
   const [otp, setOtp] = useState("");
   const [fullName, setFullName] = useState("");
   const [message, setMessage] = useState("");
+  const [utm, setUtm] = useState<Record<string, string | undefined>>({});
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
     getBookingContextAction(orgSlug).then(setCtx);
+    const params = new URLSearchParams(window.location.search);
+    setUtm({
+      utmSource: params.get("utm_source") ?? undefined,
+      utmMedium: params.get("utm_medium") ?? undefined,
+      utmCampaign: params.get("utm_campaign") ?? undefined,
+      utmTerm: params.get("utm_term") ?? undefined,
+      utmContent: params.get("utm_content") ?? undefined,
+    });
   }, [orgSlug]);
 
   if (!ctx) {
@@ -167,6 +176,7 @@ export function OnlineBookingWizard({ orgSlug }: Props) {
                   professionalId,
                   serviceId,
                   startsAtIso: selectedSlot,
+                  ...utm,
                 });
                 setMessage(
                   r.pendingApproval

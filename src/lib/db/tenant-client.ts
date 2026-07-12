@@ -102,6 +102,23 @@ const TENANT_SCOPED_MODELS = new Set([
   "AiFaq",
   "AiConversation",
   "AiConversationMessage",
+  "RndsCredential",
+  "RndsSubmission",
+  "InteroperabilitySettings",
+  "LabResultReconciliation",
+  "MobileSyncLog",
+  "MobileIdempotencyRecord",
+  "LeadSource",
+  "MarketingCampaign",
+  "Lead",
+  "LeadInteraction",
+  "LeadFollowUpLog",
+  "LandingPage",
+  "TrackedLink",
+  "ReferralProgram",
+  "Referral",
+  "Testimonial",
+  "LeadOptOut",
 ]);
 
 const MODELS_WITH_SOFT_DELETE = new Set([

@@ -3,6 +3,7 @@ import { adminPrisma } from "@/lib/db/admin-client";
 import { getAvailabilityRange } from "@/modules/api/services/availability.service";
 import { createAppointment } from "@/modules/scheduling/services/appointment.service";
 import { aiComplete } from "./llm-gateway.service";
+import { captureSecretaryLeadIfNeeded } from "@/modules/marketing/services/secretary-lead.service";
 
 export type SecretaryIntent =
   | "agendar"
@@ -151,6 +152,11 @@ export async function processSecretaryMessage(input: {
 
   if (faq) {
     await appendMessage(conversation.id, input.organizationId, "ASSISTANT", faq.answer);
+    await captureSecretaryLeadIfNeeded({
+      organizationId: input.organizationId,
+      phone: input.phone,
+      conversationId: conversation.id,
+    });
     return { reply: faq.answer, intent: "faq", handoff: false, conversationId: conversation.id };
   }
 
@@ -165,6 +171,13 @@ export async function processSecretaryMessage(input: {
       input.message,
     );
     await appendMessage(conversation.id, input.organizationId, "ASSISTANT", bookingReply.reply);
+    if (!bookingReply.scheduled) {
+      await captureSecretaryLeadIfNeeded({
+        organizationId: input.organizationId,
+        phone: input.phone,
+        conversationId: conversation.id,
+      });
+    }
     return {
       reply: bookingReply.reply,
       intent: "agendar",
@@ -187,6 +200,12 @@ export async function processSecretaryMessage(input: {
     data: { lastIntent: intent },
   });
   await appendMessage(conversation.id, input.organizationId, "ASSISTANT", text);
+
+  await captureSecretaryLeadIfNeeded({
+    organizationId: input.organizationId,
+    phone: input.phone,
+    conversationId: conversation.id,
+  });
 
   return { reply: text, intent, handoff: false, conversationId: conversation.id };
 }

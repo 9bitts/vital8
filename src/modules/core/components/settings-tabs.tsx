@@ -133,6 +133,11 @@ export function SettingsTabs({
           {canManage && <TabsTrigger value="members">Membros</TabsTrigger>}
           {canManage && <TabsTrigger value="audit">Auditoria</TabsTrigger>}
           {canManage && (
+            <TabsTrigger value="interop" asChild>
+              <a href="/app/configuracoes/interoperabilidade">Interoperabilidade</a>
+            </TabsTrigger>
+          )}
+          {canManage && (
             <TabsTrigger value="api" asChild>
               <a href="/app/configuracoes/integracoes">API e Integrações</a>
             </TabsTrigger>

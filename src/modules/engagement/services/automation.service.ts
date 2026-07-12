@@ -16,6 +16,9 @@ const ORIGIN_BY_EVENT: Record<AutomationTriggerEvent, CommunicationOrigin> = {
   BIRTHDAY: "ANIVERSARIO",
   POST_ENCOUNTER_NPS: "NPS",
   OVERDUE_COLLECTION: "COBRANCA",
+  LEAD_NEW: "LEAD_FOLLOWUP",
+  LEAD_NO_RESPONSE: "LEAD_FOLLOWUP",
+  LEAD_NO_SHOW: "LEAD_FOLLOWUP",
 };
 
 export async function enqueueCommunication(input: {
