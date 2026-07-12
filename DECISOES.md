@@ -264,3 +264,95 @@ Registro de decisões tomadas na Fase 1 quando há trade-offs ou dependências d
 **Feature flag:** `ai` exclusivo ENTERPRISE (add-on futuro documentado como extensão).
 
 **Posição regulatória:** Apoio à decisão clínica (CFM) — conteúdo IA nunca gravado automaticamente no prontuário; rodapé de revisão profissional obrigatório na UI.
+
+## Interoperabilidade FHIR / RNDS / Laboratórios (Fase 13)
+
+**Padrão:** HL7 FHIR R4 com perfis publicados pela RNDS onde disponíveis.
+
+**Identificadores BR (URLs canônicas):**
+- CPF: `http://rnds.saude.gov.br/fhir/r4/NamingSystem/cpf`
+- CNS: `http://rnds.saude.gov.br/fhir/r4/NamingSystem/cns`
+- CNES: `http://rnds.saude.gov.br/fhir/r4/NamingSystem/cnes`
+- CID-10: `http://www.saude.gov.br/fhir/r4/CodeSystem/BRCID10`
+- TUSS: `http://www.saude.gov.br/fhir/r4/CodeSystem/BRTabelaTUSS`
+
+**PHI:** Campo `Patient.cnsEncrypted` via `phi.ts` (mesmo padrão CPF). Certificado A1 RNDS em `RndsCredential.certificateEncrypted`.
+
+**Certificado A3:** Apenas referência (`certificateReference`) — assinatura em token físico; Vital8 não armazena chave privada.
+
+**Adapter RNDS:** Mock fiel em dev (`MockRndsAdapter`) simula `POST /token` (TTL 15 min), protocolos, `OperationOutcome` e rejeições. Interface `RndsAdapter` pronta para mTLS com certificado real.
+
+**API FHIR:** `GET /api/v1/fhir/{resource}` com escopos existentes mapeados por recurso + flag `interoperability` (ENTERPRISE). Suporte `_lastUpdated` para sincronização incremental.
+
+**RNDS envio:** `RndsSubmission` com fila/retry/DLQ no job processor (mesmo padrão webhooks). RAC gerado de `Encounter` `ASSINADO`; resultado de `ExamResult`.
+
+**Laboratórios:** Adapter genérico; entrada via `POST /api/v1/inbound/lab-results` (escopo `lab:inbound`) + polling opcional. Conciliação por `ServiceRequest/{id}`; fila manual quando ambíguo.
+
+**Feature flag:** `interoperability` exclusivo ENTERPRISE.
+
+**Guia operacional:** `docs/rnds.md` — separa automação Vital8 vs burocracia DATASUS.
+
+## PWA Mobile do Profissional (Fase 14)
+
+**Service Worker:** Serwist (`@serwist/next`) — sucessor do `next-pwa`, compatível com App Router. `src/sw.ts` compilado para `public/sw.js` no build de produção (`disable` em `development`).
+
+**Política de cache por sensibilidade:**
+
+| Classe | Estratégia | Exemplos |
+|--------|------------|----------|
+| Estáticos / shell | Precache + stale-while-revalidate | JS, CSS, ícones, manifest |
+| Operacionais | Network-first + fallback cache criptografado | `/api/mobile/sync/*`, páginas `/m/*` |
+| Clínico | Network-only (nunca persistente) | `/atendimento`, `/prontuario`, `/api/v1/encounters` |
+| Financeiro | Network-only | vendas, pagamentos, recebíveis |
+
+**Cache local:** IndexedDB (`vital8-offline`) com payload AES-GCM; chave derivada via PBKDF2 de material HMAC (`/api/mobile/cache-key`) atrelado à sessão. **Logout ou expiração = purge total** (`purgeOfflineStore`).
+
+**Offline = leitura + fila de escrita:** Snapshot agenda (7 dias atrás → 14 à frente) + metadados mínimos de pacientes (nome, convênio, alergias — **sem prontuário**). Ações enfileiradas em `OfflineActionQueue` com `Idempotency-Key` (reuso Fase 11).
+
+**Prontuário offline:** **Não editável nesta fase.** Integridade, assinatura digital e `RecordAccessLog` exigem servidor; conteúdo clínico permanece network-only no SW e na UI mobile (`/m/atendimento` bloqueia offline).
+
+**Conflitos:** `VERSION_MISMATCH` / `SLOT_CONFLICT` → 409; ação vai para **Pendências de sincronização** — nunca last-write-wins silencioso.
+
+**Push:** Adapter `getPushAdapter()` — mock em dev; Web Push/VAPID em produção. Preferências `pushEnabled` + `pushCategories` no centro de notificações (Fase 9).
+
+**Feature flag:** `pwa` em planos PRO e ENTERPRISE. Offline apenas `PROFISSIONAL_SAUDE` e `RECEPCAO`.
+
+**Lighthouse PWA:** Meta ≥ 90 em build de produção com SW ativo (manifest completo, ícones maskable, `display: standalone`, fallback `/offline`).
+
+## Marketing e captação (Fase 15)
+
+**Funil:** `Lead` com status NOVO → PERDIDO; UTMs e `LeadSource` persistidos; conversão deduplica por telefone/CPF (Fase 2) e grava origem **permanentemente no Patient**.
+
+**Consentimento:** Marketing separado do transacional (`OptOutPurpose.MARKETING`, `LeadOptOut`). Formulários públicos **rejeitam** envio sem `marketingConsent` + política de privacidade.
+
+**Cadência:** `LeadFollowUpLog` + scanners no job processor; opt-out bloqueia envio.
+
+**Publicidade em saúde:** Templates seed sem promessa de resultado; aviso CFM/CRO nas landings; depoimentos exigem consentimento de publicação.
+
+**Campanhas:** `MarketingCampaign` (ROI) separado de `Campaign` (broadcast Fase 8).
+
+**Feature flag:** `marketing` em PRO/ENTERPRISE; landing pages limitadas (3 no PRO, ilimitadas ENTERPRISE).
+
+## Dados em plataformas de anúncio (Fase 15)
+
+**Decisão:** Adapter `getAdsAdapter()` — mock em dev; Meta/Google em produção.
+
+**Proibido:** PHI, CID, nomes, CPF, dados clínicos em eventos.
+
+**Permitido:** `page_view`, `lead`, `schedule`, `attendance` com identificadores **hasheados** (SHA-256) e apenas com `consentGranted: true`.
+
+**Teste:** `marketing.test.ts` valida ausência de termos sensíveis no payload.
+
+## Auditoria de segurança (2026-07-12)
+
+Relatório completo: `SECURITY-AUDIT.md` · Backlog: `SECURITY-BACKLOG.md`
+
+**Correções críticas aplicadas:** isolamento `/app/sistema`, IDOR notificações, cron fail-closed, OTP `randomInt`, rate limit login, PHI fora de logs em produção, `AUTH_SECRET` obrigatório em prod, SSRF em webhooks, guard de seed em produção, `branchFilter` na agenda.
+
+**Trade-offs aceitos conscientemente:**
+- JWT stateless sem blocklist (mitigar com `maxAge` — backlog B-04)
+- `adminPrisma` em jobs/automação com `organizationId` explícito no parâmetro
+- CSP `unsafe-inline` temporário (Next.js) — backlog F-02
+- Hash de busca (`cpfHash`, `phoneSearch`) não reversível mas identificável — necessário para dedup/LGPD export
+
+**Suíte de regressão:** `src/lib/security/security.test.ts` (SSRF, cron, login limit, PHI log, markRead).
