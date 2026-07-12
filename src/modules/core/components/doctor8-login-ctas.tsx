@@ -99,17 +99,16 @@ async function openClinicaDoctor8Register() {
 }
 
 export async function openDoctor8Login(entry: Doctor8LoginEntry) {
-  if (entry.id === "clinica") {
-    await openClinicaDoctor8Register();
-    return;
+  switch (entry.id) {
+    case "clinica":
+      await openClinicaDoctor8Register();
+      break;
+    case "empresa":
+    case "farmacia":
+    case "laboratorio":
+      window.location.href = entry.href;
+      break;
   }
-
-  if (entry.href) {
-    window.location.href = entry.href;
-    return;
-  }
-
-  signInWithDoctor8(entry.orgType);
 }
 
 type Doctor8LoginCtasProps = {
