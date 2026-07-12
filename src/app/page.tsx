@@ -48,9 +48,9 @@ export default function HomePage() {
         className="pointer-events-none absolute inset-0 flex items-center justify-center"
       >
         <svg
-          viewBox="0 0 500 260"
+          viewBox="95 35 310 190"
           preserveAspectRatio="xMidYMid slice"
-          className="h-full w-full scale-110"
+          className="h-full w-full scale-105"
         >
           <defs>
             <linearGradient id="inf-grad" x1="0" y1="0" x2="500" y2="260" gradientUnits="userSpaceOnUse">
