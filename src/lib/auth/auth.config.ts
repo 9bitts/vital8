@@ -17,8 +17,8 @@ export const authConfig = {
       if (user) {
         token.id = user.id;
         token.name = user.name;
-        token.organizationId = user.organizationId;
-        token.role = user.role;
+        if (user.organizationId) token.organizationId = user.organizationId;
+        if (user.role) token.role = user.role;
         token.branchId = user.branchId ?? null;
       }
 
@@ -73,8 +73,8 @@ declare module "next-auth" {
     id: string;
     email: string;
     name: string;
-    organizationId: string;
-    role: Role;
+    organizationId?: string;
+    role?: Role;
     branchId?: string | null;
   }
 }
