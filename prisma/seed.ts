@@ -14,6 +14,8 @@ import { seedAnalytics } from "./seed-analytics";
 import { seedPhase10, seedDemoExtras } from "./seed-phase10";
 import { seedApi } from "./seed-api";
 import { seedAi } from "./seed-ai";
+import { seedInteroperability } from "./seed-interoperability";
+import { seedMarketing } from "./seed-marketing";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -26,6 +28,12 @@ const prisma = new PrismaClient({ adapter });
 const DEV_PASSWORD = "Vital8@dev";
 
 async function main() {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_SEED !== "true") {
+    throw new Error(
+      "Seed bloqueado em produção. Defina ALLOW_SEED=true apenas em ambiente controlado.",
+    );
+  }
+
   console.log("🌱 Iniciando seed do Vital8...");
 
   await prisma.auditLog.deleteMany();
@@ -43,6 +51,21 @@ async function main() {
   await prisma.aiDataProcessingConsent.deleteMany();
   await prisma.aiFaq.deleteMany();
   await prisma.aiSettings.deleteMany();
+  await prisma.labResultReconciliation.deleteMany();
+  await prisma.referral.deleteMany();
+  await prisma.referralProgram.deleteMany();
+  await prisma.leadFollowUpLog.deleteMany();
+  await prisma.leadInteraction.deleteMany();
+  await prisma.leadOptOut.deleteMany();
+  await prisma.lead.deleteMany();
+  await prisma.trackedLink.deleteMany();
+  await prisma.landingPage.deleteMany();
+  await prisma.testimonial.deleteMany();
+  await prisma.marketingCampaign.deleteMany();
+  await prisma.leadSource.deleteMany();
+  await prisma.rndsSubmission.deleteMany();
+  await prisma.rndsCredential.deleteMany();
+  await prisma.interoperabilitySettings.deleteMany();
   await prisma.userReportPreference.deleteMany();
   await prisma.userNotificationPreference.deleteMany();
   await prisma.userNotification.deleteMany();
@@ -330,6 +353,7 @@ async function main() {
   });
 
   await seedAnalytics(prisma, orgVidaPlena.id);
+  await seedMarketing(prisma, orgVidaPlena.id);
 
   const memVp = await prisma.membership.findFirstOrThrow({
     where: { userId: ownerVidaPlena.id, organizationId: orgVidaPlena.id },
@@ -345,8 +369,9 @@ async function main() {
 
   const apiSeed = await seedApi(prisma, orgVidaPlena.id, orgVidaPlena.slug);
   await seedAi(prisma, orgVidaPlena.id, ownerVidaPlena.id);
+  await seedInteroperability(prisma, orgVidaPlena.id, ownerVidaPlena.id);
 
-  console.log("✅ Seed concluído (Fase 12 — IA aplicada incluída)");
+  console.log("✅ Seed concluído (Fase 15 — Marketing incluída)");
   console.log("");
   console.log("Contas de desenvolvimento (senha para todas):", DEV_PASSWORD);
   console.log("- ana@vidaplena.local (OWNER — Clínica Vida Plena)");

@@ -48,7 +48,7 @@ export async function processOrganizationExport(exportId: string) {
     };
 
     const storageKey = `exports/${orgId}/${exportId}.json`;
-    console.log(`[Vital8 Export] ${storageKey} (${JSON.stringify(payload).length} bytes)`);
+    console.log(`[Vital8 Export] ${storageKey} (${Object.keys(payload).length} campos)`);
 
     return adminPrisma.organizationExport.update({
       where: { id: exportId },

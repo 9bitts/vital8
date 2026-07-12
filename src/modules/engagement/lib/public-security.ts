@@ -3,7 +3,14 @@ import { createHmac, randomBytes } from "crypto";
 const FILE_TOKEN_TTL_MS = 15 * 60 * 1000;
 
 function getSigningKey(): string {
-  return process.env.AUTH_SECRET ?? "dev-insecure-secret";
+  const key = process.env.AUTH_SECRET;
+  if (!key) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("AUTH_SECRET obrigatório em produção");
+    }
+    return "dev-insecure-secret-only-local";
+  }
+  return key;
 }
 
 export function createSignedFileToken(payload: {
