@@ -1,12 +1,16 @@
-import { headers } from "next/headers";
+import type { PermissionKey } from "@/lib/auth/permissions";
 import type { Role } from "@/generated/prisma/client";
+import { headers } from "next/headers";
+import type { Role as RoleType } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth/auth";
 import { createTenantClient } from "@/lib/db/tenant-client";
+import { canUser } from "@/modules/admin/services/permission-profile.service";
+import { assertBranchBelongsToOrg } from "@/modules/admin/services/branch.service";
 
 export class AuthError extends Error {
   constructor(
     message: string,
-    public readonly code: "UNAUTHORIZED" | "FORBIDDEN" | "NO_ORGANIZATION",
+    public readonly code: "UNAUTHORIZED" | "FORBIDDEN" | "NO_ORGANIZATION" | "READ_ONLY",
   ) {
     super(message);
     this.name = "AuthError";
@@ -18,6 +22,7 @@ export type AuthContext = {
   userEmail: string;
   userName: string;
   organizationId: string;
+  branchId: string | null;
   role: Role;
   db: ReturnType<typeof createTenantClient>;
 };
@@ -34,12 +39,16 @@ export function mapAuthError(error: unknown): ActionResult {
 }
 
 export async function requireAuth(
-  allowedRoles?: Role[],
+  allowedRoles?: RoleType[],
 ): Promise<AuthContext> {
   const session = await auth();
 
   if (!session?.user?.id) {
     throw new AuthError("Não autenticado", "UNAUTHORIZED");
+  }
+
+  if (session.error === "SessionRevoked") {
+    throw new AuthError("Sessão expirada ou revogada", "UNAUTHORIZED");
   }
 
   if (!session.organizationId || !session.role) {
@@ -55,9 +64,37 @@ export async function requireAuth(
     userEmail: session.user.email ?? "",
     userName: session.user.name ?? "",
     organizationId: session.organizationId,
+    branchId: session.branchId ?? null,
     role: session.role,
     db: createTenantClient(session.organizationId),
   };
+}
+
+export async function requirePermission(
+  ctx: AuthContext,
+  key: PermissionKey,
+): Promise<void> {
+  const ok = await canUser(ctx.organizationId, ctx.userId, ctx.role, key);
+  if (!ok) {
+    throw new AuthError("Permissão insuficiente", "FORBIDDEN");
+  }
+}
+
+export async function can(ctx: AuthContext, key: PermissionKey): Promise<boolean> {
+  return canUser(ctx.organizationId, ctx.userId, ctx.role, key);
+}
+
+export function branchScope(branchId: string | null | undefined) {
+  if (!branchId) return {};
+  return { branchId };
+}
+
+export async function requireValidBranch(
+  ctx: AuthContext,
+  branchId: string | null | undefined,
+): Promise<void> {
+  if (!branchId) return;
+  await assertBranchBelongsToOrg(ctx.organizationId, branchId);
 }
 
 export async function getRequestMeta(): Promise<{

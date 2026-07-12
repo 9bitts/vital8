@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Subset estrutural TISS 3.05.00 para validação de referência. -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="http://www.ans.gov.br/padroes/tiss/schemas"
+  xmlns:tiss="http://www.ans.gov.br/padroes/tiss/schemas"
+  elementFormDefault="qualified">
+
+  <xs:element name="mensagemTISS">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="cabecalho" type="tiss:CabecalhoType"/>
+        <xs:element name="prestadorParaOperadora" type="tiss:PrestadorParaOperadoraType"/>
+        <xs:element name="epilogo" type="tiss:EpilogoType"/>
+      </xs:sequence>
+      <xs:attribute name="versao" type="xs:string" fixed="3.05.00" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:complexType name="CabecalhoType">
+    <xs:sequence>
+      <xs:element name="identificacaoTransacao" type="tiss:IdentificacaoTransacaoType"/>
+      <xs:element name="origem" type="tiss:OrigemType"/>
+      <xs:element name="destino" type="tiss:DestinoType"/>
+      <xs:element name="competencia" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="IdentificacaoTransacaoType">
+    <xs:sequence>
+      <xs:element name="tipoTransacao" type="xs:string"/>
+      <xs:element name="sequencialTransacao" type="xs:integer"/>
+      <xs:element name="dataRegistroTransacao" type="xs:date"/>
+      <xs:element name="horaRegistroTransacao" type="xs:time"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="OrigemType">
+    <xs:sequence>
+      <xs:element name="identificacaoPrestador" type="tiss:IdentificacaoPrestadorType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="IdentificacaoPrestadorType">
+    <xs:sequence>
+      <xs:element name="codigoCNES" type="xs:string" minOccurs="0"/>
+      <xs:element name="cnpjContratado" type="xs:string"/>
+      <xs:element name="codigoPrestadorNaOperadora" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DestinoType">
+    <xs:sequence>
+      <xs:element name="registroANS" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PrestadorParaOperadoraType">
+    <xs:sequence>
+      <xs:element name="loteGuias" type="tiss:LoteGuiasType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="LoteGuiasType">
+    <xs:sequence>
+      <xs:element name="numeroLote" type="xs:integer"/>
+      <xs:element name="guias" type="tiss:GuiasType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="GuiasType">
+    <xs:choice maxOccurs="unbounded">
+      <xs:element name="guiaConsulta" type="tiss:GuiaConsultaType"/>
+      <xs:element name="guiaSP-SADT" type="tiss:GuiaSpSadtType"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="GuiaConsultaType">
+    <xs:sequence>
+      <xs:element name="cabecalhoGuia" type="tiss:CabecalhoGuiaType"/>
+      <xs:element name="dadosBeneficiario" type="tiss:DadosBeneficiarioType"/>
+      <xs:element name="procedimentosExecutados" type="tiss:ProcedimentosType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="GuiaSpSadtType">
+    <xs:sequence>
+      <xs:element name="cabecalhoGuia" type="tiss:CabecalhoGuiaType"/>
+      <xs:element name="dadosBeneficiario" type="tiss:DadosBeneficiarioType"/>
+      <xs:element name="procedimentosExecutados" type="tiss:ProcedimentosType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="CabecalhoGuiaType">
+    <xs:sequence>
+      <xs:element name="registroANS" type="xs:string"/>
+      <xs:element name="numeroGuiaPrestador" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DadosBeneficiarioType">
+    <xs:sequence>
+      <xs:element name="numeroCarteira" type="xs:string"/>
+      <xs:element name="nomeBeneficiario" type="xs:string"/>
+      <xs:element name="validadeCarteira" type="xs:date" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ProcedimentosType">
+    <xs:sequence>
+      <xs:element name="procedimentoExecutado" type="tiss:ProcedimentoExecutadoType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ProcedimentoExecutadoType">
+    <xs:sequence>
+      <xs:element name="codigoProcedimento" type="xs:string"/>
+      <xs:element name="quantidadeExecutada" type="xs:positiveInteger"/>
+      <xs:element name="valorUnitario" type="xs:decimal"/>
+      <xs:element name="valorTotal" type="xs:decimal"/>
+      <xs:element name="dataExecucao" type="xs:date"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="EpilogoType">
+    <xs:sequence>
+      <xs:element name="hash" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

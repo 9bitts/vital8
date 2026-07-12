@@ -2,10 +2,18 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import type { Role } from "@/generated/prisma/client";
 import { authConfig } from "@/lib/auth/auth.config";
+import {
+  doctor8Provider,
+  type Doctor8Profile,
+  isDoctor8B2BRole,
+} from "@/lib/auth/doctor8-provider";
 import { adminPrisma } from "@/lib/db/admin-client";
 import { verifyPassword } from "@/lib/auth/password";
 import { loginSchema } from "@/modules/core/schemas/auth.schema";
 import { createAuditLog } from "@/modules/core/services/audit.service";
+import {
+  getSessionVersions,
+} from "@/lib/auth/session-version.service";
 
 async function resolveActiveMembership(userId: string, organizationId?: string) {
   const memberships = await adminPrisma.membership.findMany({
@@ -30,9 +38,43 @@ async function resolveActiveMembership(userId: string, organizationId?: string) 
   return memberships[0];
 }
 
+function normalizeDocumentNumber(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+async function getActiveMembershipsWithOrg(userId: string) {
+  return adminPrisma.membership.findMany({
+    where: {
+      userId,
+      isActive: true,
+      deletedAt: null,
+      organization: { isActive: true, deletedAt: null },
+    },
+    include: {
+      organization: {
+        select: { documentNumber: true },
+      },
+    },
+  });
+}
+
+function findMembershipByCnpj(
+  memberships: Awaited<ReturnType<typeof getActiveMembershipsWithOrg>>,
+  orgCnpj: string,
+) {
+  const normalized = normalizeDocumentNumber(orgCnpj);
+  return (
+    memberships.find(
+      (m) =>
+        normalizeDocumentNumber(m.organization.documentNumber) === normalized,
+    ) ?? null
+  );
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   providers: [
+    doctor8Provider(),
     Credentials({
       name: "credentials",
       credentials: {
@@ -87,10 +129,172 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           organizationId: membership.organizationId,
           role: membership.role,
+          userSessionVersion: user.sessionVersion,
+          membershipSessionVersion: membership.sessionVersion,
         };
       },
     }),
   ],
+  callbacks: {
+    ...authConfig.callbacks,
+    async signIn({ account, profile }) {
+      if (account?.provider !== "doctor8") {
+        return true;
+      }
+
+      const p = profile as Doctor8Profile | undefined;
+
+      if (p?.email_verified !== true) {
+        console.warn(
+          "SSO doctor8 bloqueado: email não verificado, sub=",
+          p?.sub,
+        );
+        return "/entrar?error=Doctor8EmailNaoVerificado";
+      }
+
+      if (!isDoctor8B2BRole(p?.role) || !p?.org_cnpj) {
+        console.warn(
+          "SSO doctor8 bloqueado: conta não B2B ou sem CNPJ, sub=",
+          p?.sub,
+        );
+        return "/entrar?error=Doctor8ContaInvalida";
+      }
+
+      const email = p?.email?.toLowerCase();
+      if (!email) {
+        console.warn(
+          "SSO doctor8 bloqueado: email ausente, sub=",
+          p?.sub,
+        );
+        return "/entrar?error=Doctor8SemConta";
+      }
+
+      const user = await adminPrisma.user.findFirst({
+        where: { email, deletedAt: null },
+      });
+
+      if (!user) {
+        console.warn(
+          "SSO doctor8 bloqueado: usuário não cadastrado, sub=",
+          p?.sub,
+        );
+        return "/entrar?error=Doctor8SemConta";
+      }
+
+      const memberships = await getActiveMembershipsWithOrg(user.id);
+      if (memberships.length === 0) {
+        console.warn(
+          "SSO doctor8 bloqueado: sem membership ativo, sub=",
+          p?.sub,
+        );
+        return "/entrar?error=Doctor8SemOrganizacao";
+      }
+
+      const membership = findMembershipByCnpj(memberships, p.org_cnpj);
+      if (!membership) {
+        console.warn(
+          "SSO doctor8 bloqueado: CNPJ divergente, sub=",
+          p?.sub,
+        );
+        return "/entrar?error=Doctor8CnpjDivergente";
+      }
+
+      await createAuditLog({
+        action: "user.login",
+        userId: user.id,
+        organizationId: membership.organizationId,
+        metadata: {
+          sso: "doctor8",
+          orgType: p.org_type,
+          cnpj: p.org_cnpj,
+        },
+      });
+
+      return true;
+    },
+    async jwt({ token, user, account, profile, trigger, session }) {
+      if (user && account?.provider === "doctor8") {
+        const p = profile as Doctor8Profile | undefined;
+        const email = (p?.email ?? user.email)?.toLowerCase();
+        if (!email) {
+          throw new Error("doctor8 SSO: email ausente no jwt");
+        }
+
+        const vital8User = await adminPrisma.user.findFirst({
+          where: { email, deletedAt: null },
+        });
+        if (!vital8User) {
+          throw new Error("doctor8 SSO: usuário não encontrado");
+        }
+
+        const orgCnpj = p?.org_cnpj;
+        if (!orgCnpj) {
+          throw new Error("doctor8 SSO: org_cnpj ausente no jwt");
+        }
+
+        const memberships = await getActiveMembershipsWithOrg(vital8User.id);
+        const membership = findMembershipByCnpj(memberships, orgCnpj);
+        if (!membership) {
+          throw new Error("doctor8 SSO: CNPJ divergente");
+        }
+
+        token.id = vital8User.id;
+        token.name = vital8User.name;
+        token.organizationId = membership.organizationId;
+        token.role = membership.role;
+        token.branchId = null;
+        token.userSessionVersion = vital8User.sessionVersion;
+        token.membershipSessionVersion = membership.sessionVersion;
+      } else if (user) {
+        token.id = user.id;
+        token.name = user.name;
+        token.organizationId = user.organizationId;
+        token.role = user.role;
+        token.branchId = user.branchId ?? null;
+        if (user.userSessionVersion !== undefined) {
+          token.userSessionVersion = user.userSessionVersion;
+        }
+        if (user.membershipSessionVersion !== undefined) {
+          token.membershipSessionVersion = user.membershipSessionVersion;
+        }
+      }
+
+      if (trigger === "update" && session) {
+        const updateSession = session as {
+          organizationId?: string;
+          role?: Role;
+          branchId?: string | null;
+        };
+
+        if (updateSession.organizationId && updateSession.role) {
+          token.organizationId = updateSession.organizationId;
+          token.role = updateSession.role;
+        }
+        if (updateSession.branchId !== undefined) {
+          token.branchId = updateSession.branchId;
+        }
+      }
+
+      if (token.id && token.organizationId && !token.error) {
+        const versions = await getSessionVersions(
+          token.id as string,
+          token.organizationId as string,
+        );
+        if (!versions) {
+          token.error = "SessionRevoked";
+        } else if (
+          versions.userSessionVersion !== token.userSessionVersion ||
+          versions.membershipSessionVersion !== token.membershipSessionVersion
+        ) {
+          token.error = "SessionRevoked";
+        } else {
+          token.role = versions.role;
+        }
+      }
+
+      return token;
+    },
+  },
 });
 
 export async function refreshSessionOrganization(

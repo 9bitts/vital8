@@ -28,13 +28,384 @@ enum Plan {
   ENTERPRISE
 }
 
+enum SubscriptionPlan {
+  BASICO
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionCycle {
+  MONTHLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ATIVA
+  INADIMPLENTE
+  CANCELADA
+}
+
 enum Role {
   OWNER
   ADMIN
   PROFISSIONAL_SAUDE
   RECEPCAO
   FINANCEIRO
+  ESTOQUE
   LEITURA
+}
+
+enum Sex {
+  MASCULINO
+  FEMININO
+  INTERSEX
+  NAO_INFORMADO
+}
+
+enum MaritalStatus {
+  SOLTEIRO
+  CASADO
+  DIVORCIADO
+  VIUVO
+  UNIAO_ESTAVEL
+  OUTRO
+  NAO_INFORMADO
+}
+
+enum ConsentChannel {
+  PRESENCIAL
+  DIGITAL
+  TELEFONE
+  IMPORTACAO
+}
+
+enum PatientDocCategory {
+  RG
+  CPF
+  COMPROVANTE_RESIDENCIA
+  CARTEIRINHA_CONVENIO
+  EXAME
+  OUTRO
+}
+
+enum ProfessionalCouncil {
+  CRM
+  CRO
+  CREFITO
+  CRP
+  CRN
+  OUTRO
+}
+
+enum Weekday {
+  DOMINGO
+  SEGUNDA
+  TERCA
+  QUARTA
+  QUINTA
+  SEXTA
+  SABADO
+}
+
+enum AppointmentStatus {
+  AGENDADO
+  CONFIRMADO
+  AGUARDANDO
+  EM_ATENDIMENTO
+  FINALIZADO
+  FALTOU
+  CANCELADO
+  REMARCADO
+}
+
+enum AppointmentOrigin {
+  RECEPCAO
+  TELEFONE
+  ONLINE
+  API
+}
+
+enum OnlineApprovalStatus {
+  NAO_APLICAVEL
+  PENDENTE
+  APROVADO
+  REJEITADO
+}
+
+enum ConfirmationChannel {
+  WHATSAPP
+  SMS
+  EMAIL
+}
+
+enum ConfirmationStatus {
+  PENDENTE
+  CONFIRMADO
+  CANCELADO
+  EXPIRADO
+}
+
+enum RecurrenceFrequency {
+  WEEKLY
+  BIWEEKLY
+}
+
+enum EncounterModality {
+  PRESENCIAL
+  TELECONSULTA
+}
+
+enum EncounterStatus {
+  RASCUNHO
+  ASSINADO
+}
+
+enum EncounterSectionType {
+  ANAMNESE
+  EXAME_FISICO
+  EVOLUCAO_SOAP
+  HIPOTESE_DIAGNOSTICA
+  CONDUTA
+  REGISTRO_RESERVADO
+  PLANO_TRATAMENTO
+  ANTROPOMETRIA
+  EVOLUCAO_FISIO
+  ODONTOGRAMA
+}
+
+enum PrescriptionType {
+  COMUM
+  CONTROLE_ESPECIAL
+}
+
+enum PrescriptionProviderType {
+  LOCAL
+  MEMED
+}
+
+enum DrugInteractionSeverity {
+  WARNING
+  BLOCKING
+}
+
+enum MedicalCertificateType {
+  ATESTADO
+  DECLARACAO
+  COMPARECIMENTO
+}
+
+enum RecordResourceType {
+  ENCOUNTER
+  PRESCRIPTION
+  EXAM_RESULT
+  MEDICAL_CERTIFICATE
+  ENCOUNTER_AMENDMENT
+  PATIENT_PORTAL
+}
+
+enum FormFieldType {
+  TEXT
+  NUMBER
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  SCALE
+  DATE
+  TABLE
+}
+
+enum OdontogramEntryStatus {
+  PLANEJADO
+  REALIZADO
+  EXISTENTE
+}
+
+enum SaleStatus {
+  RASCUNHO
+  CONFIRMADA
+  CANCELADA
+}
+
+enum SaleItemType {
+  SERVICE
+  PACKAGE
+  PRODUCT
+}
+
+enum ReceivableStatus {
+  ABERTO
+  PARCIAL
+  PAGO
+  VENCIDO
+  CANCELADO
+}
+
+enum ReceivableOrigin {
+  SALE
+  AVULSO
+  TISS_BATCH
+}
+
+enum PriorAuthorizationStatus {
+  SOLICITADA
+  AUTORIZADA
+  NEGADA
+  EXPIRADA
+}
+
+enum TissGuideType {
+  GUIA_CONSULTA
+  GUIA_SP_SADT
+}
+
+enum TissGuideStatus {
+  RASCUNHO
+  PRONTA
+  EM_LOTE
+  ENVIADA
+  PAGA
+  GLOSADA_PARCIAL
+  GLOSADA_TOTAL
+}
+
+enum TissBatchStatus {
+  ABERTO
+  FECHADO
+  ENVIADO
+  CONCILIADO
+  REABERTO
+}
+
+enum GlosaItemStatus {
+  ACEITA
+  EM_RECURSO
+  RECUPERADA
+  PERDIDA
+}
+
+enum TissSequenceType {
+  GUIDE
+  BATCH
+}
+
+enum TissAccidentIndication {
+  NAO_ACIDENTE
+  ACIDENTE_TRABALHO
+  ACIDENTE_TRANSITO
+  OUTROS_ACIDENTES
+}
+
+enum TissServiceCharacter {
+  ELETIVO
+  URGENCIA
+}
+
+enum TissConsultationType {
+  PRIMEIRA
+  SEGUIMENTO
+  PRE_NATAL
+  REFERENCIADA
+}
+
+enum PaymentMethod {
+  DINHEIRO
+  PIX
+  DEBITO
+  CREDITO
+  TRANSFERENCIA
+  LINK
+}
+
+enum PayableStatus {
+  ABERTO
+  PAGO
+  CANCELADO
+}
+
+enum CashRegisterStatus {
+  ABERTO
+  FECHADO
+}
+
+enum CashRegisterEntryType {
+  ABERTURA
+  PAGAMENTO
+  SANGRIA
+  REFORCO
+  ESTORNO
+}
+
+enum CommissionRuleType {
+  PERCENTUAL
+  FIXO
+}
+
+enum CommissionBase {
+  FATURADO
+  RECEBIDO
+}
+
+enum CommissionStatementStatus {
+  ABERTO
+  FECHADO
+  PAGO
+}
+
+enum FinancialCategoryType {
+  RECEITA
+  DESPESA
+}
+
+enum TaxRegime {
+  SIMPLES_NACIONAL
+  LUCRO_PRESUMIDO
+  LUCRO_REAL
+  MEI
+}
+
+enum NfseProvider {
+  MOCK
+  NFSE_NACIONAL
+}
+
+enum FiscalDocumentType {
+  NFSE
+  RECIBO_RECEITA_SAUDE
+}
+
+enum FiscalDocumentStatus {
+  PENDING
+  PROCESSING
+  ISSUED
+  FAILED
+  CANCELLED
+  REPLACED
+}
+
+enum FiscalEmitProfile {
+  AUTO
+  NFSE_ONLY
+  RECEITA_SAUDE_ONLY
+}
+
+enum SignatureProvider {
+  DEV_SIMPLE
+  ICP_A1
+  ICP_DSAS
+  ICP_LACUNA
+}
+
+enum SignedEntityType {
+  ENCOUNTER
+  PRESCRIPTION
+  MEDICAL_CERTIFICATE
+  EXAM_RESULT
+}
+
+enum PackagePurchaseStatus {
+  ATIVO
+  ESGOTADO
+  CANCELADO
 }
 
 model Organization {
@@ -58,25 +429,3858 @@ model Organization {
   memberships Membership[]
   invitations Invitation[]
   auditLogs   AuditLog[]
+  patients    Patient[]
+  professionals Professional[]
+  services    Service[]
+  rooms       Room[]
+  scheduleTemplates ScheduleTemplate[]
+  scheduleExceptions ScheduleException[]
+  holidays    Holiday[]
+  appointments Appointment[]
+  waitingListEntries WaitingListEntry[]
+  encounters Encounter[]
+  formTemplates FormTemplate[]
+  documentTemplates DocumentTemplate[]
+  prescriptions Prescription[]
+  examRequests ExamRequest[]
+  examResults ExamResult[]
+  recordAccessLogs RecordAccessLog[]
+  priceTables PriceTable[]
+  sales Sale[]
+  packages Package[]
+  packagePurchases PackagePurchase[]
+  receivables Receivable[]
+  payments Payment[]
+  payables Payable[]
+  suppliers Supplier[]
+  financialCategories FinancialCategory[]
+  bankAccounts BankAccount[]
+  cashRegisters CashRegister[]
+  commissionRules CommissionRule[]
+  commissionStatements CommissionStatement[]
+  refunds Refund[]
+  healthInsurers HealthInsurer[]
+  insurerContracts InsurerContract[]
+  priorAuthorizations PriorAuthorization[]
+  tissGuides TissGuide[]
+  tissBatches TissBatch[]
+  tissSequences TissSequence[]
+  glosaItems GlosaItem[]
+  insurerPayments InsurerPayment[]
+  products Product[]
+  stockLocations StockLocation[]
+  stockBatches StockBatch[]
+  stockBalances StockBalance[]
+  stockMovements StockMovement[]
+  purchaseOrders PurchaseOrder[]
+  serviceConsumptionKits ServiceConsumptionKit[]
+  inventories Inventory[]
+  messageTemplates MessageTemplate[]
+  automationRules AutomationRule[]
+  communicationLogs CommunicationLog[]
+  patientOptOuts PatientOptOut[]
+  patientPortalOtps PatientPortalOtp[]
+  patientPortalSessions PatientPortalSession[]
+  onlineBookingConfig OnlineBookingConfig?
+  teleconsultConsents TeleconsultConsent[]
+  teleconsultRooms TeleconsultRoom[]
+  dailyRecordingLogs DailyRecordingLog[]
+  teleconsultVideoIncidents TeleconsultVideoIncident[]
+  professionalCalendarLinks ProfessionalCalendarLink[]
+  npsSurveys NpsSurvey[]
+  npsResponses NpsResponse[]
+  releasedDocuments ReleasedDocument[]
+  campaigns Campaign[]
+  patientDataCorrectionRequests PatientDataCorrectionRequest[]
+  dailyOrgMetrics DailyOrgMetrics[]
+  dailyProfessionalMetrics DailyProfessionalMetrics[]
+  performanceGoals PerformanceGoal[]
+  scheduledReports ScheduledReport[]
+  userNotifications UserNotification[]
+  branches          Branch[]
+  permissionProfiles PermissionProfile[]
+  subscription      Subscription?
+  onboardingProgress OnboardingProgress?
+  organizationExports OrganizationExport[]
+  apiClients          ApiClient[]
+  aiSettings          AiSettings?
+  aiDataProcessingConsents AiDataProcessingConsent[]
+  aiInteractionLogs   AiInteractionLog[]
+  aiUsageMonthly      AiUsageMonthly[]
+  aiFaqs              AiFaq[]
+  aiConversations     AiConversation[]
+  rndsCredentials     RndsCredential[]
+  rndsSubmissions     RndsSubmission[]
+  interoperabilitySettings InteroperabilitySettings?
+  labReconciliations  LabResultReconciliation[]
+  mobileSyncLogs      MobileSyncLog[]
+  mobileIdempotencyRecords MobileIdempotencyRecord[]
+  pushSubscriptions   PushSubscription[]
+  leadSources         LeadSource[]
+  marketingCampaigns  MarketingCampaign[]
+  leads               Lead[]
+  leadInteractions    LeadInteraction[]
+  leadFollowUpLogs    LeadFollowUpLog[]
+  landingPages        LandingPage[]
+  trackedLinks        TrackedLink[]
+  referralProgram     ReferralProgram?
+  referrals           Referral[]
+  testimonials        Testimonial[]
+  leadOptOuts         LeadOptOut[]
+  fiscalSettings      FiscalSettings?
+  fiscalDocuments     FiscalDocument[]
+  signatureSettings   SignatureSettings?
+  signedClinicalDocuments SignedClinicalDocument[]
+  prescriptionSettings    PrescriptionSettings?
+  prescriptionControlSequences PrescriptionControlSequence[]
+  messagingSettings       MessagingSettings?
+  paymentSettings         PaymentSettings?
+  patientPaymentLinks     PatientPaymentLink[]
+  conversationThreads     ConversationThread[]
+  scribeSessions          ScribeSession[]
+  whatsAppDeliveryLogs    WhatsAppDeliveryLog[]
+  lacunaSignatureSessions LacunaSignatureSession[]
 
   @@index([deletedAt])
 }
 
+model Patient {
+  id               String         @id @default(cuid())
+  organizationId   String
+  searchName       String
+  fullName         String
+  socialName       String?
+  cpfEncrypted     String?
+  cpfHash          String?
+  cnsEncrypted     String?
+  rgEncrypted      String?
+  birthDate        DateTime?      @db.Date
+  sex              Sex?
+  genderIdentity   String?
+  maritalStatus    MaritalStatus?
+  profession       String?
+  phonesEncrypted  String?
+  phoneSearch      String?
+  emailEncrypted   String?
+  addressEncrypted String?
+  photoUrl         String?
+  notesEncrypted   String?
+  referralSource   String?
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  utmTerm          String?
+  utmContent       String?
+  leadSourceId     String?
+  marketingCampaignId String?
+  acquiredAt       DateTime?
+  tags             String[]       @default([])
+  isIncomplete     Boolean        @default(false)
+  isActive         Boolean        @default(true)
+  anonymizedAt     DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
+
+  organization      Organization           @relation(fields: [organizationId], references: [id])
+  guardians         PatientGuardian[]
+  insurancePlans    PatientInsurancePlan[]
+  consents          PatientConsent[]
+  documents         PatientDocument[]
+  allergies         Allergy[]
+  chronicConditions ChronicCondition[]
+  medications       PatientMedication[]
+  appointments      Appointment[]
+  waitingListEntries WaitingListEntry[]
+  encounters        Encounter[]
+  prescriptions     Prescription[]
+  examRequests      ExamRequest[]
+  examResults       ExamResult[]
+  medicalCertificates MedicalCertificate[]
+  sales             Sale[]
+  receivables       Receivable[]
+  payments          Payment[]
+  packagePurchases  PackagePurchase[]
+  priorAuthorizations PriorAuthorization[]
+  communicationLogs CommunicationLog[]
+  patientOptOuts PatientOptOut[]
+  patientPortalOtps PatientPortalOtp[]
+  patientPortalSessions PatientPortalSession[]
+  teleconsultConsents TeleconsultConsent[]
+  npsSurveys NpsSurvey[]
+  releasedDocuments ReleasedDocument[]
+  dataCorrectionRequests PatientDataCorrectionRequest[]
+  aiConversations AiConversation[]
+  leads           Lead[]
+  referralsMade   Referral[] @relation("ReferrerPatient")
+  referralsReceived Referral[] @relation("ReferredPatient")
+  testimonials    Testimonial[]
+  acquisitionSource LeadSource? @relation(fields: [leadSourceId], references: [id])
+  acquisitionCampaign MarketingCampaign? @relation(fields: [marketingCampaignId], references: [id])
+  fiscalDocuments FiscalDocument[]
+  paymentLinks    PatientPaymentLink[]
+  conversationThreads ConversationThread[]
+
+  @@unique([organizationId, cpfHash])
+  @@index([organizationId, searchName])
+  @@index([organizationId, birthDate])
+  @@index([organizationId, phoneSearch])
+  @@index([deletedAt])
+}
+
+model PatientGuardian {
+  id             String    @id @default(cuid())
+  organizationId String
+  patientId      String
+  fullName       String
+  cpfEncrypted   String?
+  phoneEncrypted String?
+  relationship   String
+  isPrimary      Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([deletedAt])
+}
+
+model PatientInsurancePlan {
+  id                  String    @id @default(cuid())
+  organizationId      String
+  patientId           String
+  healthInsurerId     String?
+  insurerName         String
+  planName            String?
+  cardNumberEncrypted String
+  cardNumberSearch    String?
+  validUntil          DateTime? @db.Date
+  isPrimary           Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  patient        Patient         @relation(fields: [patientId], references: [id])
+  healthInsurer  HealthInsurer?  @relation(fields: [healthInsurerId], references: [id])
+  appointments   Appointment[]
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([healthInsurerId])
+  @@index([organizationId, cardNumberSearch])
+  @@index([deletedAt])
+}
+
+model PatientConsent {
+  id             String         @id @default(cuid())
+  organizationId String
+  patientId      String
+  termKey        String
+  termVersion    String
+  purpose        String
+  channel        ConsentChannel
+  grantedAt      DateTime       @default(now())
+  revokedAt      DateTime?
+  recordedById   String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([deletedAt])
+}
+
+model PatientDocument {
+  id             String             @id @default(cuid())
+  organizationId String
+  patientId      String
+  category       PatientDocCategory @default(OUTRO)
+  fileName       String
+  mimeType       String
+  fileSize       Int
+  storageKey     String
+  uploadedById   String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  deletedAt      DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([deletedAt])
+}
+
+model Allergy {
+  id             String    @id @default(cuid())
+  organizationId String
+  patientId      String
+  substance      String
+  severity       String?
+  notesEncrypted String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([deletedAt])
+}
+
+model ChronicCondition {
+  id             String    @id @default(cuid())
+  organizationId String
+  patientId      String
+  condition      String
+  cidCode        String?
+  diagnosedAt    DateTime? @db.Date
+  notesEncrypted String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([deletedAt])
+}
+
+model PatientMedication {
+  id             String    @id @default(cuid())
+  organizationId String
+  patientId      String
+  name           String
+  dosage         String?
+  frequency      String?
+  route          String?
+  isActive       Boolean   @default(true)
+  notesEncrypted String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([deletedAt])
+}
+
+model Professional {
+  id             String              @id @default(cuid())
+  organizationId String
+  userId         String?
+  displayName    String
+  councilType    ProfessionalCouncil?
+  councilNumber  String?
+  councilState   String?
+  specialties    String[]            @default([])
+  color          String              @default("#3B82F6")
+  isActive       Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+
+  organization       Organization         @relation(fields: [organizationId], references: [id])
+  scheduleTemplates  ScheduleTemplate[]
+  scheduleExceptions ScheduleException[]
+  appointments       Appointment[]
+  waitingListEntries WaitingListEntry[]
+  encounters         Encounter[]
+  sales              Sale[]
+  commissionRules    CommissionRule[]
+  commissionStatements CommissionStatement[]
+  dailyMetrics       DailyProfessionalMetrics[]
+  performanceGoals   PerformanceGoal[]
+  fiscalDocuments    FiscalDocument[]
+  calendarLink       ProfessionalCalendarLink?
+
+  @@index([organizationId])
+  @@index([deletedAt])
+}
+
+model ProfessionalCalendarLink {
+  id                    String    @id @default(cuid())
+  organizationId        String
+  professionalId        String    @unique
+  calendarId            String    @default("primary")
+  refreshTokenEncrypted String
+  accessTokenEncrypted  String?
+  tokenExpiresAt        DateTime?
+  syncEnabled           Boolean   @default(true)
+  lastSyncAt            DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  professional Professional @relation(fields: [professionalId], references: [id])
+
+  @@index([organizationId])
+}
+
+model Service {
+  id                     String    @id @default(cuid())
+  organizationId         String
+  name                   String
+  category               String?
+  durationMinutes        Int
+  privatePrice           Decimal   @default(0) @db.Decimal(10, 2)
+  tussCode               String?
+  tussProcedureId        String?
+  preparationInstructions String?
+  allowOnlineBooking     Boolean   @default(false)
+  isTeleconsult          Boolean   @default(false)
+  isActive               Boolean   @default(true)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  deletedAt              DateTime?
+
+  organization       Organization       @relation(fields: [organizationId], references: [id])
+  tussProcedure      TussProcedure?     @relation(fields: [tussProcedureId], references: [id])
+  appointments       Appointment[]
+  waitingListEntries WaitingListEntry[]
+  priceTableItems    PriceTableItem[]
+  saleItems          SaleItem[]
+  packages           Package[]
+  priorAuthorizations PriorAuthorization[]
+  consumptionKit     ServiceConsumptionKit?
+  automationRules    AutomationRule[]
+
+  @@index([organizationId])
+  @@index([tussProcedureId])
+  @@index([deletedAt])
+}
+
+model Room {
+  id             String    @id @default(cuid())
+  organizationId String
+  branchId       String?
+  name           String
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  branch            Branch?            @relation(fields: [branchId], references: [id])
+  scheduleTemplates ScheduleTemplate[]
+  appointments      Appointment[]
+  stockLocation     StockLocation?
+
+  @@index([organizationId])
+  @@index([branchId])
+  @@index([deletedAt])
+}
+
+model ScheduleTemplate {
+  id             String   @id @default(cuid())
+  organizationId String
+  branchId       String?
+  professionalId String
+  weekday        Weekday
+  startTime      String
+  endTime        String
+  slotIntervalMinutes Int @default(30)
+  defaultRoomId  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  branch       Branch?      @relation(fields: [branchId], references: [id])
+  professional Professional @relation(fields: [professionalId], references: [id])
+  defaultRoom  Room?        @relation(fields: [defaultRoomId], references: [id])
+
+  @@index([organizationId])
+  @@index([branchId])
+  @@index([professionalId])
+  @@index([deletedAt])
+}
+
+model ScheduleException {
+  id             String   @id @default(cuid())
+  organizationId String
+  professionalId String
+  startAt        DateTime
+  endAt          DateTime
+  reason         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  professional Professional @relation(fields: [professionalId], references: [id])
+
+  @@index([organizationId])
+  @@index([professionalId])
+  @@index([startAt, endAt])
+  @@index([deletedAt])
+}
+
+model Holiday {
+  id             String   @id @default(cuid())
+  organizationId String
+  date           DateTime @db.Date
+  name           String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, date])
+  @@index([organizationId])
+  @@index([deletedAt])
+}
+
+model Appointment {
+  id                  String            @id @default(cuid())
+  organizationId      String
+  branchId            String?
+  patientId           String
+  professionalId      String
+  serviceId           String
+  roomId              String?
+  startsAt            DateTime
+  endsAt              DateTime
+  status              AppointmentStatus @default(AGENDADO)
+  origin              AppointmentOrigin @default(RECEPCAO)
+  onlineApprovalStatus OnlineApprovalStatus @default(NAO_APLICAVEL)
+  isPrivate           Boolean           @default(true)
+  patientInsurancePlanId String?
+  saleId              String?           @unique
+  expectedAmount      Decimal?          @db.Decimal(10, 2)
+  notes               String?
+  offlineProvisional  Boolean           @default(false)
+  isSqueeze           Boolean           @default(false)
+  recurrenceGroupId   String?
+  rescheduledFromId   String?
+  arrivedAt           DateTime?
+  startedAt           DateTime?
+  finishedAt          DateTime?
+  queueNumber         Int?
+  googleCalendarEventId String?
+  cancelReason        String?
+  calledAt            DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  deletedAt           DateTime?
+
+  organization   Organization              @relation(fields: [organizationId], references: [id])
+  branch         Branch?                   @relation(fields: [branchId], references: [id])
+  patient        Patient                   @relation(fields: [patientId], references: [id])
+  professional   Professional              @relation(fields: [professionalId], references: [id])
+  service        Service                   @relation(fields: [serviceId], references: [id])
+  room           Room?                     @relation(fields: [roomId], references: [id])
+  statusHistory  AppointmentStatusHistory[]
+  confirmations  AppointmentConfirmation[]
+  encounter      Encounter?
+  sale           Sale?                     @relation(fields: [saleId], references: [id])
+  patientInsurancePlan PatientInsurancePlan? @relation(fields: [patientInsurancePlanId], references: [id])
+  tissGuide      TissGuide?
+  packageConsumptions PackageSessionConsumption[]
+  stockMovements StockMovement[]
+  teleconsultConsent TeleconsultConsent?
+  npsSurvey NpsSurvey?
+
+  @@index([organizationId])
+  @@index([branchId])
+  @@index([patientInsurancePlanId])
+  @@index([professionalId, startsAt])
+  @@index([patientId, startsAt])
+  @@index([roomId, startsAt])
+  @@index([status])
+  @@index([startsAt])
+  @@index([deletedAt])
+}
+
+model AppointmentStatusHistory {
+  id             String             @id @default(cuid())
+  organizationId String
+  appointmentId  String
+  fromStatus     AppointmentStatus?
+  toStatus       AppointmentStatus
+  changedById    String?
+  changedAt      DateTime           @default(now())
+  metadata       Json               @default("{}")
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@index([organizationId])
+  @@index([appointmentId])
+}
+
+model WaitingListEntry {
+  id                     String    @id @default(cuid())
+  organizationId         String
+  patientId              String
+  serviceId              String
+  preferredProfessionalId String?
+  preferredPeriodStart   DateTime?
+  preferredPeriodEnd     DateTime?
+  priority               Int       @default(0)
+  notes                  String?
+  isActive               Boolean   @default(true)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  deletedAt              DateTime?
+
+  organization          Organization  @relation(fields: [organizationId], references: [id])
+  patient               Patient       @relation(fields: [patientId], references: [id])
+  service               Service       @relation(fields: [serviceId], references: [id])
+  preferredProfessional Professional? @relation(fields: [preferredProfessionalId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([deletedAt])
+}
+
+model AppointmentConfirmation {
+  id             String              @id @default(cuid())
+  organizationId String
+  appointmentId  String
+  channel        ConfirmationChannel
+  token          String              @unique
+  status         ConfirmationStatus  @default(PENDENTE)
+  sentAt         DateTime            @default(now())
+  respondedAt    DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@index([organizationId])
+  @@index([appointmentId])
+}
+
+model Cid10Code {
+  id          String @id @default(cuid())
+  code        String @unique
+  description String
+  chapter     String?
+
+  @@index([description])
+}
+
+model DrugCatalog {
+  id               String  @id @default(cuid())
+  name             String
+  activeIngredient String?
+  concentration    String?
+  pharmaceuticalForm String?
+  route            String?
+  isControlled     Boolean @default(false)
+
+  prescriptionItems PrescriptionItem[]
+  interactionsA     DrugInteraction[] @relation("DrugA")
+  interactionsB     DrugInteraction[] @relation("DrugB")
+
+  @@index([name])
+  @@index([activeIngredient])
+}
+
+model DrugInteraction {
+  id                  String                  @id @default(cuid())
+  drugCatalogIdA      String?
+  drugCatalogIdB      String?
+  activeIngredientA   String
+  activeIngredientB   String
+  severity            DrugInteractionSeverity @default(WARNING)
+  description         String
+  createdAt           DateTime                @default(now())
+
+  drugA DrugCatalog? @relation("DrugA", fields: [drugCatalogIdA], references: [id])
+  drugB DrugCatalog? @relation("DrugB", fields: [drugCatalogIdB], references: [id])
+
+  @@index([activeIngredientA])
+  @@index([activeIngredientB])
+}
+
+model Encounter {
+  id              String            @id @default(cuid())
+  organizationId  String
+  appointmentId   String?           @unique
+  patientId       String
+  professionalId  String
+  authorUserId    String
+  modality        EncounterModality @default(PRESENCIAL)
+  specialty       String?
+  startedAt       DateTime          @default(now())
+  endedAt         DateTime?
+  status          EncounterStatus   @default(RASCUNHO)
+  contentHash     String?
+  signedAt        DateTime?
+  signatureMeta   Json              @default("{}")
+  teleconsultConsentId String?       @unique
+  professionalJoinedAt DateTime?
+  patientJoinedAt DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+  appointment    Appointment?        @relation(fields: [appointmentId], references: [id])
+  patient        Patient             @relation(fields: [patientId], references: [id])
+  professional   Professional        @relation(fields: [professionalId], references: [id])
+  sections       EncounterSection[]
+  amendments     EncounterAmendment[]
+  prescriptions  Prescription[]
+  examRequests   ExamRequest[]
+  examResults    ExamResult[]
+  certificates   MedicalCertificate[]
+  formResponses  FormResponse[]
+  odontogram     Odontogram?
+  bodyChartEntries BodyChartEntry[]
+  stockMovements StockMovement[]
+  teleconsultConsent TeleconsultConsent? @relation(fields: [teleconsultConsentId], references: [id])
+  teleconsultRoom TeleconsultRoom?
+  dailyRecordingLogs DailyRecordingLog[]
+  teleconsultVideoIncidents TeleconsultVideoIncident[]
+  npsSurvey NpsSurvey?
+  scribeSessions ScribeSession[]
+
+  @@index([organizationId])
+  @@index([patientId, startedAt])
+  @@index([professionalId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+enum ScribeSessionStatus {
+  STARTED
+  CONSENTED
+  TRANSCRIBED
+  SOAP_READY
+  APPLIED
+  DISCARDED
+}
+
+model ScribeSession {
+  id                    String              @id @default(cuid())
+  organizationId        String
+  encounterId           String
+  patientId             String
+  userId                String
+  consentRecordedAt     DateTime?
+  transcriptEncrypted   String?
+  soapDraft             Json?
+  transcribeLogId       String?
+  soapLogId             String?
+  status                ScribeSessionStatus @default(STARTED)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  encounter    Encounter    @relation(fields: [encounterId], references: [id])
+
+  @@index([organizationId])
+  @@index([encounterId])
+  @@index([patientId])
+}
+
+model EncounterSection {
+  id                 String               @id @default(cuid())
+  organizationId     String
+  encounterId        String
+  sectionType        EncounterSectionType
+  contentEncrypted   String?
+  structuredData     Json                 @default("{}")
+  restrictedToAuthor Boolean              @default(false)
+  sortOrder          Int                  @default(0)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  encounter Encounter @relation(fields: [encounterId], references: [id])
+
+  @@index([organizationId])
+  @@index([encounterId])
+}
+
+model EncounterAmendment {
+  id               String   @id @default(cuid())
+  organizationId   String
+  encounterId      String
+  authorUserId     String
+  contentEncrypted String
+  createdAt        DateTime @default(now())
+
+  encounter Encounter @relation(fields: [encounterId], references: [id])
+
+  @@index([organizationId])
+  @@index([encounterId])
+}
+
+model FormTemplate {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  specialty      String?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization         @relation(fields: [organizationId], references: [id])
+  versions     FormTemplateVersion[]
+
+  @@index([organizationId])
+  @@index([deletedAt])
+}
+
+model FormTemplateVersion {
+  id             String   @id @default(cuid())
+  organizationId String
+  templateId     String
+  version        Int
+  schema         Json
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  template  FormTemplate   @relation(fields: [templateId], references: [id])
+  responses FormResponse[]
+
+  @@unique([templateId, version])
+  @@index([organizationId])
+}
+
+model FormResponse {
+  id               String   @id @default(cuid())
+  organizationId   String
+  encounterId      String
+  versionId        String
+  answersEncrypted String
+  createdAt        DateTime @default(now())
+
+  encounter Encounter           @relation(fields: [encounterId], references: [id])
+  version   FormTemplateVersion @relation(fields: [versionId], references: [id])
+
+  @@index([organizationId])
+  @@index([encounterId])
+}
+
+model Prescription {
+  id             String           @id @default(cuid())
+  organizationId String
+  encounterId    String
+  patientId      String
+  professionalId String
+  authorUserId   String
+  type           PrescriptionType @default(COMUM)
+  provider       PrescriptionProviderType @default(LOCAL)
+  notesEncrypted String?
+  signedAt       DateTime?
+  validationCode String?          @unique
+  validationUrl  String?
+  controlBookNumber String?
+  memedExternalId String?
+  sentToPatientAt DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization       @relation(fields: [organizationId], references: [id])
+  encounter    Encounter          @relation(fields: [encounterId], references: [id])
+  patient      Patient            @relation(fields: [patientId], references: [id])
+  items        PrescriptionItem[]
+
+  @@index([organizationId])
+  @@index([encounterId])
+  @@index([patientId])
+  @@index([validationCode])
+  @@index([deletedAt])
+}
+
+model PrescriptionItem {
+  id             String  @id @default(cuid())
+  organizationId String
+  prescriptionId String
+  drugCatalogId  String?
+  drugName       String
+  concentration  String?
+  pharmaceuticalForm String?
+  dosage         String
+  route          String?
+  duration       String?
+  quantity       String?
+  sortOrder      Int     @default(0)
+
+  prescription Prescription @relation(fields: [prescriptionId], references: [id])
+  drugCatalog  DrugCatalog? @relation(fields: [drugCatalogId], references: [id])
+
+  @@index([organizationId])
+  @@index([prescriptionId])
+}
+
+model MedicalCertificate {
+  id                    String                 @id @default(cuid())
+  organizationId        String
+  encounterId           String
+  patientId             String
+  authorUserId          String
+  type                  MedicalCertificateType
+  templateId            String?
+  contentEncrypted      String
+  cidCode               String?
+  patientConsentRecorded Boolean               @default(false)
+  signedAt              DateTime               @default(now())
+  createdAt             DateTime               @default(now())
+  deletedAt             DateTime?
+
+  encounter Encounter @relation(fields: [encounterId], references: [id])
+  patient   Patient   @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([encounterId])
+  @@index([patientId])
+}
+
+model DocumentTemplate {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  bodyTemplate   String
+  type           MedicalCertificateType?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([deletedAt])
+}
+
+model ExamRequest {
+  id             String    @id @default(cuid())
+  organizationId String
+  encounterId    String
+  patientId      String
+  authorUserId   String
+  notesEncrypted String?
+  createdAt      DateTime  @default(now())
+  deletedAt      DateTime?
+
+  organization Organization     @relation(fields: [organizationId], references: [id])
+  encounter    Encounter        @relation(fields: [encounterId], references: [id])
+  patient      Patient          @relation(fields: [patientId], references: [id])
+  items        ExamRequestItem[]
+  results      ExamResult[]
+  labReconciliations LabResultReconciliation[]
+
+  @@index([organizationId])
+  @@index([encounterId])
+  @@index([patientId])
+}
+
+model ExamRequestItem {
+  id             String @id @default(cuid())
+  organizationId String
+  requestId      String
+  examName       String
+  instructions   String?
+
+  request ExamRequest @relation(fields: [requestId], references: [id])
+
+  @@index([organizationId])
+  @@index([requestId])
+}
+
+model ExamResult {
+  id             String    @id @default(cuid())
+  organizationId String
+  patientId      String
+  encounterId    String?
+  requestId      String?
+  fileName       String?
+  mimeType       String?
+  storageKey     String?
+  notesEncrypted String?
+  resultedAt     DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  deletedAt      DateTime?
+
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  patient      Patient           @relation(fields: [patientId], references: [id])
+  encounter    Encounter?        @relation(fields: [encounterId], references: [id])
+  request      ExamRequest?      @relation(fields: [requestId], references: [id])
+  values       ExamResultValue[]
+  labReconciliations LabResultReconciliation[]
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([encounterId])
+}
+
+model ExamResultValue {
+  id             String  @id @default(cuid())
+  organizationId String
+  resultId       String
+  name           String
+  value          String
+  unit           String?
+  referenceRange String?
+
+  result ExamResult @relation(fields: [resultId], references: [id])
+
+  @@index([organizationId])
+  @@index([resultId])
+}
+
+model Odontogram {
+  id             String @id @default(cuid())
+  organizationId String
+  encounterId    String @unique
+
+  encounter Encounter         @relation(fields: [encounterId], references: [id])
+  entries   OdontogramEntry[]
+
+  @@index([organizationId])
+}
+
+model OdontogramEntry {
+  id             String                @id @default(cuid())
+  organizationId String
+  odontogramId   String
+  toothFdi       Int
+  face           String?
+  finding        String?
+  procedure      String?
+  status         OdontogramEntryStatus @default(PLANEJADO)
+
+  odontogram Odontogram @relation(fields: [odontogramId], references: [id])
+
+  @@index([organizationId])
+  @@index([odontogramId])
+}
+
+model BodyChartEntry {
+  id             String  @id @default(cuid())
+  organizationId String
+  encounterId    String
+  x              Float
+  y              Float
+  label          String?
+  noteEncrypted  String?
+
+  encounter Encounter @relation(fields: [encounterId], references: [id])
+
+  @@index([organizationId])
+  @@index([encounterId])
+}
+
+model RecordAccessLog {
+  id             String             @id @default(cuid())
+  organizationId String
+  userId         String?
+  resourceType   RecordResourceType
+  resourceId     String
+  action         String             @default("view")
+  ipAddress      String?
+  userAgent      String?
+  metadata       Json               @default("{}")
+  createdAt      DateTime           @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([resourceType, resourceId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model PriceTable {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  isDefault      Boolean   @default(false)
+  insurerName    String?
+  validFrom      DateTime  @default(now())
+  validTo        DateTime?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization     @relation(fields: [organizationId], references: [id])
+  items        PriceTableItem[]
+  insurerContracts InsurerContract[]
+
+  @@index([organizationId])
+  @@index([deletedAt])
+}
+
+model PriceTableItem {
+  id             String    @id @default(cuid())
+  organizationId String
+  priceTableId   String
+  serviceId      String
+  priceCents     Int
+  validFrom      DateTime  @default(now())
+  validTo        DateTime?
+
+  priceTable PriceTable @relation(fields: [priceTableId], references: [id])
+  service    Service    @relation(fields: [serviceId], references: [id])
+
+  @@unique([priceTableId, serviceId])
+  @@index([organizationId])
+  @@index([serviceId])
+}
+
+model Sale {
+  id                         String     @id @default(cuid())
+  organizationId             String
+  patientId                  String
+  professionalId             String?
+  status                     SaleStatus @default(RASCUNHO)
+  subtotalCents              Int        @default(0)
+  discountCents              Int        @default(0)
+  totalCents                 Int        @default(0)
+  discountReason             String?
+  discountAuthorizedByUserId String?
+  createdByUserId            String
+  nfseNumber                 String?
+  notes                      String?
+  createdAt                  DateTime   @default(now())
+  updatedAt                  DateTime   @updatedAt
+  deletedAt                  DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient      @relation(fields: [patientId], references: [id])
+  professional Professional? @relation(fields: [professionalId], references: [id])
+  appointment  Appointment?
+  items        SaleItem[]
+  receivables  Receivable[]
+  payments     Payment[]
+  packagePurchase PackagePurchase?
+  stockMovements StockMovement[]
+  fiscalDocuments FiscalDocument[]
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model SaleItem {
+  id             String       @id @default(cuid())
+  organizationId String
+  saleId         String
+  itemType       SaleItemType @default(SERVICE)
+  serviceId      String?
+  packageId      String?
+  description    String
+  quantity       Int          @default(1)
+  unitPriceCents Int
+  totalCents     Int
+  sortOrder      Int          @default(0)
+
+  sale    Sale     @relation(fields: [saleId], references: [id])
+  service Service? @relation(fields: [serviceId], references: [id])
+  package Package? @relation(fields: [packageId], references: [id])
+
+  @@index([organizationId])
+  @@index([saleId])
+}
+
+model Package {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  serviceId      String?
+  sessionCount   Int
+  priceCents     Int
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  service      Service?          @relation(fields: [serviceId], references: [id])
+  purchases    PackagePurchase[]
+  saleItems    SaleItem[]
+
+  @@index([organizationId])
+  @@index([deletedAt])
+}
+
+model PackagePurchase {
+  id             String                @id @default(cuid())
+  organizationId String
+  patientId      String
+  packageId      String
+  saleId         String                @unique
+  sessionsTotal  Int
+  sessionsUsed   Int                   @default(0)
+  status         PackagePurchaseStatus @default(ATIVO)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  organization Organization              @relation(fields: [organizationId], references: [id])
+  patient      Patient                   @relation(fields: [patientId], references: [id])
+  package      Package                   @relation(fields: [packageId], references: [id])
+  sale         Sale                      @relation(fields: [saleId], references: [id])
+  consumptions PackageSessionConsumption[]
+
+  @@index([organizationId])
+  @@index([patientId])
+}
+
+model PackageSessionConsumption {
+  id             String   @id @default(cuid())
+  organizationId String
+  purchaseId     String
+  appointmentId  String?  @unique
+  consumedAt     DateTime @default(now())
+
+  purchase    PackagePurchase @relation(fields: [purchaseId], references: [id])
+  appointment Appointment?    @relation(fields: [appointmentId], references: [id])
+
+  @@index([organizationId])
+  @@index([purchaseId])
+}
+
+model Receivable {
+  id                String           @id @default(cuid())
+  organizationId    String
+  patientId         String
+  saleId            String?
+  healthInsurerId   String?
+  tissBatchId       String?          @unique
+  origin            ReceivableOrigin @default(SALE)
+  description       String
+  totalCents        Int
+  paidCents         Int              @default(0)
+  status            ReceivableStatus @default(ABERTO)
+  installmentNumber Int              @default(1)
+  installmentCount  Int              @default(1)
+  dueDate           DateTime         @db.Date
+  reminderSentAt    DateTime?
+  optOutReminders   Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  deletedAt         DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient      @relation(fields: [patientId], references: [id])
+  sale         Sale?        @relation(fields: [saleId], references: [id])
+  healthInsurer HealthInsurer? @relation(fields: [healthInsurerId], references: [id])
+  tissBatch    TissBatch?   @relation(fields: [tissBatchId], references: [id])
+  payments     Payment[]
+  paymentLinks PatientPaymentLink[]
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([healthInsurerId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([deletedAt])
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  organizationId        String
+  patientId             String
+  receivableId          String?
+  saleId                String?
+  amountCents           Int
+  netAmountCents        Int
+  feePercent            Int           @default(0)
+  feeCents              Int           @default(0)
+  method                PaymentMethod
+  creditCardInstallments Int          @default(1)
+  expectedCreditDate    DateTime?     @db.Date
+  cashRegisterId        String?
+  createdByUserId       String
+  notes                 String?
+  createdAt             DateTime      @default(now())
+  deletedAt             DateTime?
+
+  organization  Organization   @relation(fields: [organizationId], references: [id])
+  patient       Patient        @relation(fields: [patientId], references: [id])
+  receivable    Receivable?    @relation(fields: [receivableId], references: [id])
+  sale          Sale?          @relation(fields: [saleId], references: [id])
+  cashRegister  CashRegister?  @relation(fields: [cashRegisterId], references: [id])
+  cashEntries   CashRegisterEntry[]
+  refunds       Refund[]
+  fiscalDocuments FiscalDocument[]
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([receivableId])
+  @@index([createdAt])
+  @@index([deletedAt])
+}
+
+model Supplier {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  document       String?
+  email          String?
+  phone          String?
+  deliveryTermDays Int     @default(7)
+  paymentTerms   String?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  payables     Payable[]
+  purchaseOrders PurchaseOrder[]
+
+  @@index([organizationId])
+  @@index([deletedAt])
+}
+
+model FinancialCategory {
+  id             String                @id @default(cuid())
+  organizationId String
+  name           String
+  type           FinancialCategoryType
+  parentId       String?
+  isActive       Boolean               @default(true)
+  cbsApplicable  Boolean               @default(false)
+  ibsApplicable  Boolean               @default(false)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  organization Organization        @relation(fields: [organizationId], references: [id])
+  parent       FinancialCategory?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children     FinancialCategory[] @relation("CategoryTree")
+  payables     Payable[]
+
+  @@index([organizationId])
+  @@index([parentId])
+}
+
+model BankAccount {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  bankName       String?
+  accountNumber  String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model FiscalSettings {
+  id                         String            @id @default(cuid())
+  organizationId             String            @unique
+  taxRegime                  TaxRegime         @default(SIMPLES_NACIONAL)
+  cnae                       String?
+  nacionalServiceCode        String?
+  issRateBasisPoints         Int               @default(500)
+  certificateEncrypted       String?
+  certificatePasswordEncrypted String?
+  nfseProvider               NfseProvider      @default(MOCK)
+  autoEmitOnPayment          Boolean           @default(false)
+  emitProfile                FiscalEmitProfile @default(AUTO)
+  municipioIbgeCode          String?
+  inscricaoMunicipal         String?
+  cbsIbsEnabled              Boolean           @default(false)
+  cbsRateBasisPoints         Int?
+  ibsRateBasisPoints         Int?
+  createdAt                  DateTime          @default(now())
+  updatedAt                  DateTime          @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model FiscalDocument {
+  id                   String               @id @default(cuid())
+  organizationId       String
+  documentType         FiscalDocumentType
+  status               FiscalDocumentStatus @default(PENDING)
+  number               String?
+  accessKey            String?
+  dpsNumber            String?
+  amountCents          Int
+  patientId            String
+  paymentId            String?
+  saleId               String?
+  professionalId       String?
+  patientCpfEncrypted  String?
+  serviceDescription   String?
+  responsePayload      Json?
+  pdfStorageKey        String?
+  errorMessage         String?
+  retryCount           Int                  @default(0)
+  nextRetryAt          DateTime?
+  issuedAt             DateTime?
+  cancelledAt          DateTime?
+  replacesDocumentId   String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  patient          Patient           @relation(fields: [patientId], references: [id])
+  payment          Payment?          @relation(fields: [paymentId], references: [id])
+  sale             Sale?             @relation(fields: [saleId], references: [id])
+  professional     Professional?     @relation(fields: [professionalId], references: [id])
+  replacesDocument FiscalDocument?   @relation("FiscalReplacement", fields: [replacesDocumentId], references: [id])
+  replacedBy       FiscalDocument[]  @relation("FiscalReplacement")
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([patientId])
+  @@index([paymentId])
+  @@index([nextRetryAt])
+  @@index([documentType])
+}
+
+model SignatureSettings {
+  id                           String            @id @default(cuid())
+  organizationId               String            @unique
+  provider                     SignatureProvider @default(DEV_SIMPLE)
+  certificateEncrypted           String?
+  certificatePasswordEncrypted   String?
+  dsasApiUrl                   String?
+  dsasApiKeyEncrypted            String?
+  timestampEnabled             Boolean           @default(false)
+  createdAt                    DateTime          @default(now())
+  updatedAt                    DateTime          @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model SignedClinicalDocument {
+  id               String             @id @default(cuid())
+  organizationId   String
+  entityType       SignedEntityType
+  entityId         String
+  verificationCode String             @unique
+  contentHash      String
+  signatureMethod  SignatureProvider
+  signatureMeta    Json               @default("{}")
+  timestampToken   String?
+  pdfStorageKey    String?
+  signerUserId     String
+  signerName       String
+  signedAt         DateTime
+  createdAt        DateTime           @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, entityType, entityId])
+  @@index([organizationId])
+  @@index([verificationCode])
+  @@index([contentHash])
+}
+
+enum LacunaSessionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+  ERROR
+}
+
+model LacunaSignatureSession {
+  id               String              @id @default(cuid())
+  organizationId   String
+  entityType       SignedEntityType
+  entityId         String
+  lacunaSessionId  String              @unique
+  status           LacunaSessionStatus @default(PENDING)
+  contentHash      String
+  verificationCode String
+  signerUserId     String
+  signerName       String
+  returnPath       String?
+  createdAt        DateTime            @default(now())
+  completedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([entityType, entityId])
+  @@index([status])
+}
+
+model PrescriptionSettings {
+  id                      String                 @id @default(cuid())
+  organizationId          String                 @unique
+  provider                PrescriptionProviderType @default(LOCAL)
+  memedPartnerId          String?
+  memedApiKeyEncrypted    String?
+  blockOnAllergyConflict  Boolean                @default(true)
+  blockOnDrugInteraction  Boolean                @default(false)
+  autoSendToPatient       Boolean                @default(false)
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model PrescriptionControlSequence {
+  id             String @id @default(cuid())
+  organizationId String
+  professionalId String
+  nextNumber     Int    @default(1)
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, professionalId])
+  @@index([organizationId])
+}
+
+enum MessagingProviderType {
+  CONSOLE
+  WHATSAPP_CLOUD
+}
+
+enum EmailProviderType {
+  CONSOLE
+  RESEND
+  SES
+}
+
+enum PaymentProviderType {
+  MOCK
+  EFI_PIX
+}
+
+enum PaymentLinkStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+enum ConversationThreadStatus {
+  OPEN
+  HANDOFF
+  CLOSED
+}
+
+enum ConversationMessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+model MessagingSettings {
+  id                           String               @id @default(cuid())
+  organizationId               String               @unique
+  messagingProvider            MessagingProviderType @default(CONSOLE)
+  whatsappPhoneNumberId        String?
+  whatsappAccessTokenEncrypted String?
+  whatsappBusinessAccountId    String?
+  emailProvider                EmailProviderType    @default(CONSOLE)
+  emailFrom                    String?
+  emailReplyTo                 String?
+  resendApiKeyEncrypted        String?
+  createdAt                    DateTime             @default(now())
+  updatedAt                    DateTime             @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
+model WhatsAppDeliveryLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  messageId      String?
+  phone          String?
+  template       String?
+  status         String
+  detail         String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([messageId])
+  @@index([createdAt])
+}
+
+model PaymentSettings {
+  id                        String              @id @default(cuid())
+  organizationId            String              @unique
+  provider                  PaymentProviderType @default(MOCK)
+  efiClientId               String?
+  efiClientSecretEncrypted  String?
+  efiPixKey                 String?
+  efiSandbox                Boolean             @default(true)
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
+model PatientPaymentLink {
+  id              String            @id @default(cuid())
+  organizationId  String
+  patientId       String?
+  receivableId    String?
+  externalId      String?
+  amountCents     Int
+  description     String
+  pixCopyPaste    String?
+  pixQrCodeBase64 String?
+  status          PaymentLinkStatus @default(PENDING)
+  expiresAt       DateTime?
+  paidAt          DateTime?
+  metadata        Json              @default("{}")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient?     @relation(fields: [patientId], references: [id])
+  receivable   Receivable?  @relation(fields: [receivableId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([receivableId])
+  @@index([status])
+  @@index([externalId])
+}
+
+model ConversationThread {
+  id               String                   @id @default(cuid())
+  organizationId   String
+  patientId        String?
+  phone            String
+  assignedUserId   String?
+  status           ConversationThreadStatus @default(OPEN)
+  aiConversationId String?
+  lastMessageAt    DateTime                 @default(now())
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  organization Organization          @relation(fields: [organizationId], references: [id])
+  patient      Patient?              @relation(fields: [patientId], references: [id])
+  messages     ConversationMessage[]
+
+  @@unique([organizationId, phone])
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([status])
+  @@index([lastMessageAt])
+}
+
+model ConversationMessage {
+  id                 String                       @id @default(cuid())
+  threadId           String
+  organizationId     String
+  direction          ConversationMessageDirection
+  channel            CommunicationChannel
+  body               String
+  communicationLogId String?
+  externalMessageId  String?
+  sentByUserId       String?
+  createdAt          DateTime                     @default(now())
+
+  thread ConversationThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@index([organizationId])
+  @@index([createdAt])
+}
+
+model Payable {
+  id             String        @id @default(cuid())
+  organizationId String
+  supplierId     String?
+  categoryId     String?
+  purchaseOrderId String?      @unique
+  description    String
+  amountCents    Int
+  competenceDate DateTime      @db.Date
+  dueDate        DateTime      @db.Date
+  isRecurring    Boolean       @default(false)
+  recurringDay   Int?
+  status         PayableStatus @default(ABERTO)
+  paidAt         DateTime?
+  storageKey     String?
+  fileName       String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization       @relation(fields: [organizationId], references: [id])
+  supplier     Supplier?          @relation(fields: [supplierId], references: [id])
+  category     FinancialCategory? @relation(fields: [categoryId], references: [id])
+  purchaseOrder PurchaseOrder?    @relation(fields: [purchaseOrderId], references: [id])
+
+  @@index([organizationId])
+  @@index([dueDate])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model CashRegister {
+  id                     String             @id @default(cuid())
+  organizationId         String
+  branchId               String?
+  userId                 String
+  status                 CashRegisterStatus @default(ABERTO)
+  openingAmountCents     Int                @default(0)
+  closingExpectedCents   Int?
+  closingCountedCents    Int?
+  closingDifferenceCents Int?
+  openedAt               DateTime           @default(now())
+  closedAt               DateTime?
+
+  organization Organization        @relation(fields: [organizationId], references: [id])
+  branch       Branch?             @relation(fields: [branchId], references: [id])
+  entries      CashRegisterEntry[]
+  payments     Payment[]
+
+  @@index([organizationId])
+  @@index([branchId])
+  @@index([userId])
+  @@index([status])
+}
+
+model CashRegisterEntry {
+  id             String                @id @default(cuid())
+  organizationId String
+  cashRegisterId String
+  entryType      CashRegisterEntryType
+  amountCents    Int
+  paymentId      String?
+  reason         String?
+  createdByUserId String
+  createdAt      DateTime              @default(now())
+
+  cashRegister CashRegister @relation(fields: [cashRegisterId], references: [id])
+  payment      Payment?     @relation(fields: [paymentId], references: [id])
+
+  @@index([organizationId])
+  @@index([cashRegisterId])
+}
+
+model CommissionRule {
+  id             String             @id @default(cuid())
+  organizationId String
+  professionalId String
+  serviceId      String?
+  ruleType       CommissionRuleType
+  value          Int
+  base           CommissionBase       @default(FATURADO)
+  isPrivate      Boolean?
+  isActive       Boolean              @default(true)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  professional Professional @relation(fields: [professionalId], references: [id])
+
+  @@index([organizationId])
+  @@index([professionalId])
+}
+
+model CommissionStatement {
+  id             String                    @id @default(cuid())
+  organizationId String
+  professionalId String
+  periodStart    DateTime                  @db.Date
+  periodEnd      DateTime                  @db.Date
+  status         CommissionStatementStatus @default(ABERTO)
+  totalCents     Int                       @default(0)
+  closedAt       DateTime?
+  paidAt         DateTime?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  organization Organization            @relation(fields: [organizationId], references: [id])
+  professional Professional            @relation(fields: [professionalId], references: [id])
+  items        CommissionStatementItem[]
+
+  @@index([organizationId])
+  @@index([professionalId])
+  @@index([status])
+}
+
+model CommissionStatementItem {
+  id              String @id @default(cuid())
+  organizationId  String
+  statementId     String
+  saleId          String?
+  paymentId       String?
+  description     String
+  baseCents       Int
+  commissionCents Int
+
+  statement CommissionStatement @relation(fields: [statementId], references: [id])
+
+  @@index([organizationId])
+  @@index([statementId])
+}
+
+model Refund {
+  id                String   @id @default(cuid())
+  organizationId    String
+  paymentId         String
+  amountCents       Int
+  reason            String
+  authorizedByUserId String
+  createdByUserId   String
+  createdAt         DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  payment      Payment      @relation(fields: [paymentId], references: [id])
+
+  @@index([organizationId])
+  @@index([paymentId])
+}
+
+model TussProcedure {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  term      String
+  tableType String   @default("22")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  services Service[]
+  priorAuthorizations PriorAuthorization[]
+}
+
+model GlosaReasonCode {
+  id          String @id @default(cuid())
+  code        String @unique
+  description String
+  isActive    Boolean @default(true)
+
+  glosaItems GlosaItem[]
+}
+
+model HealthInsurer {
+  id                     String   @id @default(cuid())
+  organizationId         String
+  name                   String
+  ansRegistration        String
+  cnpj                   String
+  tissVersion            String   @default("3.05.00")
+  providerCodeAtInsurer  String?
+  contactEmail           String?
+  contactPhone           String?
+  paymentTermDays        Int      @default(30)
+  batchClosingDay        Int      @default(25)
+  requiresAuthorization  Boolean  @default(false)
+  authProcedureTypes     Json     @default("[]")
+  coparticipationPercent Int      @default(0)
+  isActive               Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  deletedAt              DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  contracts    InsurerContract[]
+  patientPlans PatientInsurancePlan[]
+  priorAuthorizations PriorAuthorization[]
+  tissGuides   TissGuide[]
+  tissBatches  TissBatch[]
+  tissSequences TissSequence[]
+  insurerPayments InsurerPayment[]
+  receivables  Receivable[]
+
+  @@unique([organizationId, ansRegistration])
+  @@index([organizationId])
+  @@index([deletedAt])
+}
+
+model InsurerContract {
+  id               String    @id @default(cuid())
+  organizationId   String
+  healthInsurerId  String
+  priceTableId     String
+  validFrom        DateTime  @default(now())
+  validUntil       DateTime?
+  adjustmentNotes  String?
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  organization  Organization  @relation(fields: [organizationId], references: [id])
+  healthInsurer HealthInsurer @relation(fields: [healthInsurerId], references: [id])
+  priceTable    PriceTable    @relation(fields: [priceTableId], references: [id])
+
+  @@index([organizationId])
+  @@index([healthInsurerId])
+  @@index([priceTableId])
+  @@index([deletedAt])
+}
+
+model PriorAuthorization {
+  id              String                   @id @default(cuid())
+  organizationId  String
+  healthInsurerId String
+  patientId       String
+  serviceId       String?
+  tussProcedureId String?
+  requestDate     DateTime                 @default(now())
+  password        String?
+  validUntil      DateTime?                @db.Date
+  authorizedQty   Int                      @default(1)
+  consumedQty     Int                      @default(0)
+  status          PriorAuthorizationStatus @default(SOLICITADA)
+  attachments     Json                     @default("[]")
+  notes           String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  deletedAt       DateTime?
+
+  organization  Organization   @relation(fields: [organizationId], references: [id])
+  healthInsurer HealthInsurer  @relation(fields: [healthInsurerId], references: [id])
+  patient       Patient        @relation(fields: [patientId], references: [id])
+  service       Service?       @relation(fields: [serviceId], references: [id])
+  tussProcedure TussProcedure? @relation(fields: [tussProcedureId], references: [id])
+  tissGuides    TissGuide[]
+
+  @@index([organizationId])
+  @@index([healthInsurerId])
+  @@index([patientId])
+  @@index([status])
+  @@index([validUntil])
+  @@index([deletedAt])
+}
+
+model TissGuide {
+  id                     String                 @id @default(cuid())
+  organizationId         String
+  branchId               String?
+  appointmentId          String                 @unique
+  healthInsurerId        String
+  priorAuthorizationId   String?
+  tissBatchId            String?
+  guideType              TissGuideType
+  guideNumber            Int
+  status                 TissGuideStatus        @default(RASCUNHO)
+  competence             String
+  validationErrors       Json                   @default("[]")
+  beneficiaryName        String
+  beneficiaryCard        String
+  beneficiaryCardValidUntil DateTime?           @db.Date
+  ansRegistration        String
+  providerCnes           String?
+  providerDocument       String
+  providerCouncil        String?
+  providerCouncilNumber  String?
+  providerCouncilState   String?
+  professionalName       String
+  professionalCouncil    String?
+  professionalCouncilNumber String?
+  professionalCouncilState  String?
+  accidentIndication     TissAccidentIndication @default(NAO_ACIDENTE)
+  serviceCharacter       TissServiceCharacter   @default(ELETIVO)
+  consultationType       TissConsultationType?
+  cid10Code              String?
+  procedures             Json                   @default("[]")
+  totalValueCents        Int                    @default(0)
+  executedAt             DateTime
+  payload                Json                   @default("{}")
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  deletedAt              DateTime?
+
+  organization       Organization        @relation(fields: [organizationId], references: [id])
+  branch             Branch?             @relation(fields: [branchId], references: [id])
+  appointment        Appointment         @relation(fields: [appointmentId], references: [id])
+  healthInsurer      HealthInsurer       @relation(fields: [healthInsurerId], references: [id])
+  priorAuthorization PriorAuthorization? @relation(fields: [priorAuthorizationId], references: [id])
+  tissBatch          TissBatch?          @relation(fields: [tissBatchId], references: [id])
+  glosaItems         GlosaItem[]
+
+  @@unique([organizationId, healthInsurerId, guideNumber])
+  @@index([organizationId])
+  @@index([branchId])
+  @@index([healthInsurerId])
+  @@index([tissBatchId])
+  @@index([status])
+  @@index([competence])
+  @@index([deletedAt])
+}
+
+model TissBatch {
+  id               String          @id @default(cuid())
+  organizationId   String
+  branchId         String?
+  healthInsurerId  String
+  batchNumber      Int
+  competence       String
+  status           TissBatchStatus @default(ABERTO)
+  xmlHash          String?
+  xmlStorageKey    String?
+  sendProtocol     String?
+  sentAt           DateTime?
+  reopenedAt       DateTime?
+  reopenedByUserId String?
+  reopenReason     String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  deletedAt        DateTime?
+
+  organization    Organization     @relation(fields: [organizationId], references: [id])
+  branch          Branch?          @relation(fields: [branchId], references: [id])
+  healthInsurer   HealthInsurer    @relation(fields: [healthInsurerId], references: [id])
+  guides          TissGuide[]
+  receivable      Receivable?
+  insurerPayments InsurerPayment[]
+
+  @@unique([organizationId, healthInsurerId, batchNumber])
+  @@index([organizationId])
+  @@index([healthInsurerId])
+  @@index([competence])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model TissSequence {
+  id              String           @id @default(cuid())
+  organizationId  String
+  healthInsurerId String
+  sequenceType    TissSequenceType
+  lastNumber      Int              @default(0)
+  updatedAt       DateTime         @updatedAt
+
+  organization  Organization  @relation(fields: [organizationId], references: [id])
+  healthInsurer HealthInsurer @relation(fields: [healthInsurerId], references: [id])
+
+  @@unique([organizationId, healthInsurerId, sequenceType])
+  @@index([organizationId])
+}
+
+model GlosaItem {
+  id                  String          @id @default(cuid())
+  organizationId      String
+  tissGuideId         String
+  insurerPaymentId    String?
+  tussProcedureCode   String
+  glosaReasonCode     String
+  reasonText          String?
+  glosedAmountCents   Int
+  status              GlosaItemStatus @default(ACEITA)
+  appealDeadline      DateTime?       @db.Date
+  appealJustification String?
+  attachments         Json            @default("[]")
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  organization    Organization     @relation(fields: [organizationId], references: [id])
+  tissGuide       TissGuide        @relation(fields: [tissGuideId], references: [id])
+  insurerPayment  InsurerPayment?  @relation(fields: [insurerPaymentId], references: [id])
+  reasonCode      GlosaReasonCode  @relation(fields: [glosaReasonCode], references: [code])
+
+  @@index([organizationId])
+  @@index([tissGuideId])
+  @@index([insurerPaymentId])
+  @@index([status])
+}
+
+model InsurerPayment {
+  id               String   @id @default(cuid())
+  organizationId   String
+  healthInsurerId  String
+  tissBatchId      String
+  paymentDate      DateTime @db.Date
+  grossAmountCents Int
+  discountCents    Int      @default(0)
+  netAmountCents   Int
+  notes            String?
+  guidePayments    Json     @default("[]")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization  Organization  @relation(fields: [organizationId], references: [id])
+  healthInsurer HealthInsurer @relation(fields: [healthInsurerId], references: [id])
+  tissBatch     TissBatch     @relation(fields: [tissBatchId], references: [id])
+  glosaItems    GlosaItem[]
+
+  @@index([organizationId])
+  @@index([healthInsurerId])
+  @@index([tissBatchId])
+}
+
+enum ProductType {
+  MATERIAL
+  MEDICAMENTO
+  INSUMO
+  REVENDA
+}
+
+enum ControlledList {
+  A
+  B
+  C
+}
+
+enum StockMovementType {
+  ENTRADA_COMPRA
+  ENTRADA_AJUSTE
+  SAIDA_CONSUMO
+  SAIDA_VENDA
+  SAIDA_PERDA
+  SAIDA_VENCIMENTO
+  TRANSFERENCIA
+  AJUSTE_INVENTARIO
+  ESTORNO
+}
+
+enum PurchaseOrderStatus {
+  RASCUNHO
+  ENVIADO
+  RECEBIDO_PARCIAL
+  RECEBIDO
+  CANCELADO
+}
+
+enum InventoryStatus {
+  ABERTO
+  EM_CONTAGEM
+  FECHADO
+}
+
+model Product {
+  id                String       @id @default(cuid())
+  organizationId    String
+  name              String
+  productType       ProductType  @default(INSUMO)
+  purchaseUnit      String       @default("UN")
+  consumeUnit       String       @default("UN")
+  conversionFactor  Int          @default(1)
+  barcode           String?
+  minStock          Int          @default(0)
+  maxStock          Int?
+  averageCostCents  Int          @default(0)
+  salePriceCents    Int?
+  isControlled      Boolean      @default(false)
+  controlledList    ControlledList?
+  requiresBatchExpiry Boolean    @default(false)
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  deletedAt         DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  batches      StockBatch[]
+  balances     StockBalance[]
+  movements    StockMovement[]
+  purchaseOrderItems PurchaseOrderItem[]
+  kitItems     ServiceConsumptionKitItem[]
+  inventoryCounts InventoryCount[]
+
+  @@index([organizationId])
+  @@index([barcode])
+  @@index([deletedAt])
+}
+
+model StockLocation {
+  id                   String   @id @default(cuid())
+  organizationId       String
+  branchId             String?
+  name                 String
+  isCentral            Boolean  @default(false)
+  roomId               String?  @unique
+  temperatureControlled Boolean @default(false)
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  deletedAt            DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  branch       Branch?      @relation(fields: [branchId], references: [id])
+  room         Room?        @relation(fields: [roomId], references: [id])
+  balances     StockBalance[]
+  movementsFrom StockMovement[] @relation("MovementFrom")
+  movementsTo   StockMovement[] @relation("MovementTo")
+  inventories  Inventory[]
+
+  @@index([organizationId])
+  @@index([branchId])
+  @@index([deletedAt])
+}
+
+model StockBatch {
+  id             String    @id @default(cuid())
+  organizationId String
+  productId      String
+  batchNumber    String
+  expiryDate     DateTime? @db.Date
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  product      Product      @relation(fields: [productId], references: [id])
+  balances     StockBalance[]
+  movements    StockMovement[]
+  inventoryCounts InventoryCount[]
+
+  @@unique([organizationId, productId, batchNumber])
+  @@index([organizationId])
+  @@index([productId])
+  @@index([expiryDate])
+}
+
+model StockBalance {
+  id             String   @id @default(cuid())
+  organizationId String
+  productId      String
+  locationId     String
+  batchId        String?
+  quantity       Int      @default(0)
+  updatedAt      DateTime @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  product      Product       @relation(fields: [productId], references: [id])
+  location     StockLocation @relation(fields: [locationId], references: [id])
+  batch        StockBatch?   @relation(fields: [batchId], references: [id])
+
+  @@unique([organizationId, productId, locationId, batchId])
+  @@index([organizationId])
+  @@index([productId])
+  @@index([locationId])
+}
+
+model StockMovement {
+  id                  String            @id @default(cuid())
+  organizationId      String
+  movementType        StockMovementType
+  productId           String
+  batchId             String?
+  fromLocationId      String?
+  toLocationId        String?
+  quantity            Int
+  unitCostCents       Int               @default(0)
+  reason              String?
+  userId              String
+  purchaseOrderId     String?
+  purchaseOrderItemId String?
+  saleId              String?
+  encounterId         String?
+  appointmentId       String?
+  inventoryId         String?
+  reversedMovementId  String?           @unique
+  createdAt           DateTime          @default(now())
+
+  organization      Organization      @relation(fields: [organizationId], references: [id])
+  product           Product           @relation(fields: [productId], references: [id])
+  batch             StockBatch?       @relation(fields: [batchId], references: [id])
+  fromLocation      StockLocation?    @relation("MovementFrom", fields: [fromLocationId], references: [id])
+  toLocation        StockLocation?    @relation("MovementTo", fields: [toLocationId], references: [id])
+  purchaseOrder     PurchaseOrder?    @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderItem PurchaseOrderItem? @relation(fields: [purchaseOrderItemId], references: [id])
+  sale              Sale?             @relation(fields: [saleId], references: [id])
+  encounter         Encounter?        @relation(fields: [encounterId], references: [id])
+  appointment       Appointment?      @relation(fields: [appointmentId], references: [id])
+  inventory         Inventory?        @relation(fields: [inventoryId], references: [id])
+  reversedMovement  StockMovement?    @relation("MovementReversal", fields: [reversedMovementId], references: [id])
+  reversalOf        StockMovement?    @relation("MovementReversal")
+
+  @@index([organizationId])
+  @@index([productId])
+  @@index([movementType])
+  @@index([createdAt])
+  @@index([appointmentId])
+  @@index([encounterId])
+}
+
+model PurchaseOrder {
+  id             String              @id @default(cuid())
+  organizationId String
+  supplierId     String
+  status         PurchaseOrderStatus @default(RASCUNHO)
+  notes          String?
+  sentAt         DateTime?
+  expectedDelivery DateTime?         @db.Date
+  createdByUserId String
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  supplier     Supplier     @relation(fields: [supplierId], references: [id])
+  items        PurchaseOrderItem[]
+  movements    StockMovement[]
+  payable      Payable?
+
+  @@index([organizationId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model PurchaseOrderItem {
+  id               String   @id @default(cuid())
+  organizationId   String
+  purchaseOrderId  String
+  productId        String
+  orderedQtyPurchase Int
+  receivedQtyPurchase Int   @default(0)
+  unitCostCents    Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  product       Product       @relation(fields: [productId], references: [id])
+  movements     StockMovement[]
+
+  @@index([organizationId])
+  @@index([purchaseOrderId])
+  @@index([productId])
+}
+
+model ServiceConsumptionKit {
+  id             String   @id @default(cuid())
+  organizationId String
+  serviceId      String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  service      Service      @relation(fields: [serviceId], references: [id])
+  items        ServiceConsumptionKitItem[]
+
+  @@index([organizationId])
+}
+
+model ServiceConsumptionKitItem {
+  id             String @id @default(cuid())
+  organizationId String
+  kitId          String
+  productId      String
+  quantity       Int
+
+  kit     ServiceConsumptionKit @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  product Product               @relation(fields: [productId], references: [id])
+
+  @@unique([kitId, productId])
+  @@index([organizationId])
+}
+
+model Inventory {
+  id             String          @id @default(cuid())
+  organizationId String
+  locationId     String
+  status         InventoryStatus @default(ABERTO)
+  openedByUserId String
+  closedByUserId String?
+  closedAt       DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  location     StockLocation @relation(fields: [locationId], references: [id])
+  counts       InventoryCount[]
+  movements    StockMovement[]
+
+  @@index([organizationId])
+  @@index([locationId])
+  @@index([status])
+}
+
+model InventoryCount {
+  id             String   @id @default(cuid())
+  organizationId String
+  inventoryId    String
+  productId      String
+  batchId        String?
+  expectedQty    Int
+  countedQty     Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  inventory Inventory  @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  product   Product    @relation(fields: [productId], references: [id])
+  batch     StockBatch? @relation(fields: [batchId], references: [id])
+
+  @@unique([inventoryId, productId, batchId])
+  @@index([organizationId])
+  @@index([inventoryId])
+}
+
+enum CommunicationChannel {
+  WHATSAPP
+  SMS
+  EMAIL
+}
+
+enum CommunicationStatus {
+  FILA
+  ENVIADO
+  FALHA
+  RESPONDIDO
+}
+
+enum CommunicationOrigin {
+  CONFIRMACAO
+  COBRANCA
+  ANIVERSARIO
+  NPS
+  CAMPANHA
+  LEMBRETE_RETORNO
+  POS_ATENDIMENTO
+  LEAD_FOLLOWUP
+}
+
+enum AutomationTriggerEvent {
+  APPOINTMENT_CONFIRMATION
+  RETURN_REMINDER
+  BIRTHDAY
+  POST_ENCOUNTER_NPS
+  OVERDUE_COLLECTION
+  LEAD_NEW
+  LEAD_NO_RESPONSE
+  LEAD_NO_SHOW
+}
+
+enum AutomationOffsetUnit {
+  HOURS
+  DAYS
+}
+
+enum OptOutPurpose {
+  TRANSACIONAL
+  MARKETING
+}
+
+enum PortalOtpPurpose {
+  BOOKING
+  PORTAL_LOGIN
+}
+
+enum ReleasedDocumentType {
+  PRESCRIPTION
+  MEDICAL_CERTIFICATE
+  EXAM_RESULT
+}
+
+enum CampaignStatus {
+  RASCUNHO
+  NA_FILA
+  ENVIADA
+}
+
+enum PatientCorrectionStatus {
+  PENDENTE
+  RESOLVIDO
+}
+
+model MessageTemplate {
+  id             String               @id @default(cuid())
+  organizationId String
+  eventKey       String
+  name           String
+  channel        CommunicationChannel
+  subject        String?
+  body           String
+  isDefault      Boolean              @default(false)
+  isActive       Boolean              @default(true)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  automationRules AutomationRule[]
+  communicationLogs CommunicationLog[]
+  campaigns Campaign[]
+
+  @@unique([organizationId, eventKey, channel])
+  @@index([organizationId])
+}
+
+model AutomationRule {
+  id             String                 @id @default(cuid())
+  organizationId String
+  name           String
+  triggerEvent   AutomationTriggerEvent
+  offsetValue    Int
+  offsetUnit     AutomationOffsetUnit   @default(HOURS)
+  channel        CommunicationChannel
+  templateId     String
+  serviceId      String?
+  isActive       Boolean                @default(true)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  template     MessageTemplate @relation(fields: [templateId], references: [id])
+  service      Service? @relation(fields: [serviceId], references: [id])
+
+  @@index([organizationId])
+  @@index([triggerEvent])
+}
+
+model CommunicationLog {
+  id             String               @id @default(cuid())
+  organizationId String
+  patientId      String
+  channel        CommunicationChannel
+  templateId     String?
+  subject        String?
+  renderedBody   String
+  status         CommunicationStatus  @default(FILA)
+  origin         CommunicationOrigin
+  originRefId    String?
+  scheduledFor   DateTime?
+  sentAt         DateTime?
+  respondedAt    DateTime?
+  failReason     String?
+  retryCount     Int                  @default(0)
+  idempotencyKey String               @unique
+  campaignId     String?
+  metadata       Json                 @default("{}")
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient @relation(fields: [patientId], references: [id])
+  template     MessageTemplate? @relation(fields: [templateId], references: [id])
+  campaign     Campaign? @relation(fields: [campaignId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([origin])
+}
+
+model PatientOptOut {
+  id             String               @id @default(cuid())
+  organizationId String
+  patientId      String
+  channel        CommunicationChannel?
+  purpose        OptOutPurpose
+  createdAt      DateTime             @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient @relation(fields: [patientId], references: [id])
+
+  @@unique([organizationId, patientId, purpose, channel])
+  @@index([organizationId])
+  @@index([patientId])
+}
+
+model PatientPortalOtp {
+  id             String           @id @default(cuid())
+  organizationId String
+  patientId      String?
+  contactHash    String
+  contactType    String
+  otpHash        String
+  purpose        PortalOtpPurpose
+  expiresAt      DateTime
+  attempts       Int              @default(0)
+  maxAttempts    Int              @default(5)
+  verifiedAt     DateTime?
+  createdAt      DateTime         @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient? @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([contactHash])
+  @@index([expiresAt])
+}
+
+model PatientPortalSession {
+  id               String   @id @default(cuid())
+  organizationId   String
+  patientId        String
+  sessionTokenHash String   @unique
+  expiresAt        DateTime
+  ipAddress        String?
+  userAgent        String?
+  createdAt        DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([expiresAt])
+}
+
+model OnlineBookingConfig {
+  id                     String   @id @default(cuid())
+  organizationId         String   @unique
+  isEnabled              Boolean  @default(true)
+  enabledServiceIds      String[] @default([])
+  enabledProfessionalIds String[] @default([])
+  minAdvanceHours        Int      @default(4)
+  maxAdvanceDays         Int      @default(60)
+  requiresApproval       Boolean  @default(true)
+  requirePrepayment      Boolean  @default(false)
+  prepaymentPercent      Int      @default(100)
+  welcomeText            String?
+  autoReleaseDocuments   Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
+model TeleconsultConsent {
+  id             String    @id @default(cuid())
+  organizationId String
+  patientId      String
+  appointmentId  String    @unique
+  termVersion    String
+  token          String    @unique
+  acceptedAt     DateTime?
+  ipAddress      String?
+  userAgent      String?
+  expiresAt      DateTime
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient @relation(fields: [patientId], references: [id])
+  appointment  Appointment @relation(fields: [appointmentId], references: [id])
+  encounter    Encounter?
+
+  @@index([organizationId])
+  @@index([patientId])
+}
+
+model TeleconsultRoom {
+  id                   String    @id @default(cuid())
+  organizationId       String
+  encounterId          String    @unique
+  provider             String    @default("jitsi")
+  roomUrl              String
+  roomName             String
+  expiresAt            DateTime
+  professionalJoinedAt DateTime?
+  patientJoinedAt      DateTime?
+  createdAt            DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  encounter    Encounter @relation(fields: [encounterId], references: [id])
+
+  @@index([organizationId])
+}
+
+model DailyRecordingLog {
+  id             String    @id @default(cuid())
+  organizationId String
+  encounterId    String
+  dailyRoomName  String
+  cloudRecording Boolean   @default(true)
+  recordingId    String?
+  downloadUrl    String?
+  durationSecs   Int?
+  status         String    @default("pending")
+  readyAt        DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  encounter    Encounter @relation(fields: [encounterId], references: [id])
+
+  @@index([organizationId])
+  @@index([encounterId])
+  @@index([dailyRoomName])
+  @@index([createdAt])
+}
+
+model TeleconsultVideoIncident {
+  id               String   @id @default(cuid())
+  organizationId   String
+  encounterId      String
+  patientId        String
+  reportedByUserId String?
+  kind             String
+  notes            String?
+  createdAt        DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  encounter    Encounter @relation(fields: [encounterId], references: [id])
+
+  @@index([organizationId])
+  @@index([encounterId])
+  @@index([patientId, createdAt])
+}
+
+model NpsSurvey {
+  id             String    @id @default(cuid())
+  organizationId String
+  patientId      String
+  appointmentId  String?   @unique
+  encounterId    String?   @unique
+  token          String    @unique
+  expiresAt      DateTime
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient @relation(fields: [patientId], references: [id])
+  appointment  Appointment? @relation(fields: [appointmentId], references: [id])
+  encounter    Encounter? @relation(fields: [encounterId], references: [id])
+  response     NpsResponse?
+
+  @@index([organizationId])
+  @@index([patientId])
+}
+
+model NpsResponse {
+  id             String   @id @default(cuid())
+  organizationId String
+  surveyId       String   @unique
+  score          Int
+  comment        String?
+  respondedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  survey       NpsSurvey @relation(fields: [surveyId], references: [id])
+
+  @@index([organizationId])
+  @@index([score])
+}
+
+model ReleasedDocument {
+  id               String               @id @default(cuid())
+  organizationId   String
+  patientId        String
+  documentType     ReleasedDocumentType
+  prescriptionId   String?
+  certificateId    String?
+  examResultId     String?
+  releasedByUserId String?
+  releasedAt       DateTime             @default(now())
+  revokedAt        DateTime?
+  autoReleased     Boolean              @default(false)
+  createdAt        DateTime             @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([documentType])
+}
+
+model Campaign {
+  id             String         @id @default(cuid())
+  organizationId String
+  name           String
+  templateId     String
+  filter         Json           @default("{}")
+  createdByUserId String
+  status         CampaignStatus @default(RASCUNHO)
+  sentAt         DateTime?
+  createdAt      DateTime       @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  template     MessageTemplate @relation(fields: [templateId], references: [id])
+  communicationLogs CommunicationLog[]
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+model PatientDataCorrectionRequest {
+  id              String                  @id @default(cuid())
+  organizationId  String
+  patientId       String
+  requestedFields Json                    @default("{}")
+  message         String?
+  status          PatientCorrectionStatus @default(PENDENTE)
+  resolvedByUserId String?
+  resolvedAt      DateTime?
+  createdAt       DateTime                @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([status])
+}
+
+enum GoalType {
+  REVENUE
+  APPOINTMENTS
+  NEW_PATIENTS
+  NPS
+}
+
+enum NotificationType {
+  STOCK_LOW
+  STOCK_EXPIRY
+  GLOSA_RECEIVED
+  NPS_DETRACTOR
+  GOAL_PROGRESS
+  CASH_REGISTER_OPEN
+  TISS_BATCH_STALE
+  RECEIVABLE_DUE
+  LAB_RESULT_RECEIVED
+  RNDS_SUBMISSION
+  LEAD_STALE
+  LEAD_TASK
+  SYSTEM
+  BI_ANOMALY
+}
+
+enum RndsEnvironment {
+  HOMOLOGACAO
+  PRODUCAO
+}
+
+enum RndsCredentialStatus {
+  PENDENTE
+  HOMOLOGACAO
+  PRODUCAO
+  REVOGADO
+}
+
+enum RndsCertificateType {
+  A1
+  A3
+}
+
+enum RndsRegistrationType {
+  RAC
+  EXAM_RESULT
+}
+
+enum RndsSubmissionStatus {
+  FILA
+  ENVIADO
+  ACEITO
+  REJEITADO
+  ERRO
+  DLQ
+}
+
+enum LabReconciliationStatus {
+  PENDENTE
+  CONCILIADO
+  REJEITADO
+}
+
+model RndsCredential {
+  id                   String               @id @default(cuid())
+  organizationId       String
+  branchId             String?
+  certificateType      RndsCertificateType  @default(A1)
+  certificateEncrypted   String?
+  certificateReference String?
+  requesterId          String
+  environment          RndsEnvironment      @default(HOMOLOGACAO)
+  credentialStatus     RndsCredentialStatus @default(PENDENTE)
+  tokenExpiresAt       DateTime?
+  lastConnectionTestAt DateTime?
+  lastConnectionOk     Boolean              @default(false)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id])
+  branch       Branch?          @relation(fields: [branchId], references: [id])
+  submissions  RndsSubmission[]
+
+  @@index([organizationId])
+  @@index([branchId])
+}
+
+model InteroperabilitySettings {
+  id                        String   @id @default(cuid())
+  organizationId            String   @unique
+  autoSendRac               Boolean  @default(true)
+  autoSendExamResults       Boolean  @default(true)
+  examResultDeadlineHours   Int      @default(24)
+  labIntegrationEnabled     Boolean  @default(false)
+  labPollingEnabled         Boolean  @default(false)
+  labPollingIntervalMinutes Int      @default(30)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
+model RndsSubmission {
+  id               String               @id @default(cuid())
+  organizationId   String
+  credentialId     String
+  registrationType RndsRegistrationType
+  sourceType       String
+  sourceId         String
+  bundleJson       Json
+  protocol         String?
+  status           RndsSubmissionStatus @default(FILA)
+  responseJson     Json?
+  attemptCount     Int                  @default(0)
+  lastAttemptAt    DateTime?
+  nextRetryAt      DateTime?
+  errorMessage     String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id])
+  credential   RndsCredential @relation(fields: [credentialId], references: [id])
+
+  @@index([organizationId, status])
+  @@index([sourceType, sourceId])
+  @@index([nextRetryAt])
+  @@index([credentialId])
+}
+
+model LabResultReconciliation {
+  id                String                  @id @default(cuid())
+  organizationId    String
+  externalRequestId String?
+  inboundPayload    Json
+  status            LabReconciliationStatus @default(PENDENTE)
+  matchedRequestId  String?
+  matchedResultId   String?
+  ambiguityReason   String?
+  processedAt       DateTime?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  matchedRequest ExamRequest? @relation(fields: [matchedRequestId], references: [id])
+  matchedResult  ExamResult?  @relation(fields: [matchedResultId], references: [id])
+
+  @@index([organizationId, status])
+  @@index([externalRequestId])
+}
+
+model MobileSyncLog {
+  id               String   @id @default(cuid())
+  organizationId   String
+  userId           String
+  durationMs       Int
+  actionsApplied   Int      @default(0)
+  actionsRejected  Int      @default(0)
+  actionsPending   Int      @default(0)
+  metadata         Json     @default("{}")
+  createdAt        DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([userId])
+}
+
+model MobileIdempotencyRecord {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  idempotencyKey String
+  actionType     String
+  statusCode     Int
+  responseBody   Json
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([userId, idempotencyKey])
+  @@index([expiresAt])
+}
+
+model PushSubscription {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  endpoint       String   @unique
+  p256dh         String
+  auth           String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, userId])
+}
+
+model DailyOrgMetrics {
+  id                    String   @id @default(cuid())
+  organizationId        String
+  date                  DateTime @db.Date
+  appointmentsCompleted Int      @default(0)
+  appointmentsNoShow    Int      @default(0)
+  appointmentsCancelled Int      @default(0)
+  appointmentsScheduled Int      @default(0)
+  appointmentsConfirmed Int      @default(0)
+  slotsAvailable        Int      @default(0)
+  slotsOccupied         Int      @default(0)
+  avgWaitMinutes        Float?
+  avgEncounterMinutes   Float?
+  originRecepcao        Int      @default(0)
+  originTelefone        Int      @default(0)
+  originOnline          Int      @default(0)
+  newPatients           Int      @default(0)
+  npsAvg                Float?
+  npsCount              Int      @default(0)
+  revenueReceivedCents  Int      @default(0)
+  revenueBilledCents    Int      @default(0)
+  expensesCents         Int      @default(0)
+  discountsCents        Int      @default(0)
+  overdueCents          Int      @default(0)
+  tissBilledCents       Int      @default(0)
+  tissReceivedCents     Int      @default(0)
+  glosaCents            Int      @default(0)
+  glosaRecoveredCents   Int      @default(0)
+  inventoryValueCents   Int      @default(0)
+  inventoryLossCents    Int      @default(0)
+  criticalStockCount    Int      @default(0)
+  paymentByMethod       Json     @default("{}")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, date])
+  @@index([organizationId, date])
+}
+
+model DailyProfessionalMetrics {
+  id                    String   @id @default(cuid())
+  organizationId        String
+  professionalId        String
+  date                  DateTime @db.Date
+  appointmentsCompleted Int      @default(0)
+  appointmentsNoShow    Int      @default(0)
+  appointmentsCancelled Int      @default(0)
+  slotsAvailable        Int      @default(0)
+  slotsOccupied         Int      @default(0)
+  avgWaitMinutes        Float?
+  avgEncounterMinutes   Float?
+  npsAvg                Float?
+  npsCount              Int      @default(0)
+  revenueCents          Int      @default(0)
+  commissionCents       Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  professional Professional @relation(fields: [professionalId], references: [id])
+
+  @@unique([organizationId, professionalId, date])
+  @@index([organizationId, date])
+  @@index([professionalId, date])
+}
+
+model PerformanceGoal {
+  id             String   @id @default(cuid())
+  organizationId String
+  professionalId String?
+  year           Int
+  month          Int
+  goalType       GoalType
+  targetValue    Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  professional Professional? @relation(fields: [professionalId], references: [id])
+
+  @@unique([organizationId, professionalId, year, month, goalType])
+  @@index([organizationId, year, month])
+}
+
+model UserNotification {
+  id             String           @id @default(cuid())
+  organizationId String
+  userId         String
+  type           NotificationType
+  title          String
+  body           String
+  readAt         DateTime?
+  metadata       Json             @default("{}")
+  createdAt      DateTime         @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, userId, readAt])
+  @@index([userId, createdAt])
+}
+
+model UserNotificationPreference {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  inAppEnabled   Boolean  @default(true)
+  emailEnabled   Boolean  @default(false)
+  pushEnabled    Boolean  @default(true)
+  categories     Json     @default("{}")
+  pushCategories Json     @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, organizationId])
+}
+
+model UserReportPreference {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  reportKey      String
+  filters        Json     @default("{}")
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, organizationId, reportKey])
+}
+
+model ScheduledReport {
+  id              String    @id @default(cuid())
+  organizationId  String
+  reportKey       String
+  cronDayOfWeek   Int
+  cronHour        Int       @default(7)
+  recipientRole   Role?
+  recipientUserId String?
+  isActive        Boolean   @default(true)
+  lastSentAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model Branch {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  address        Json     @default("{}")
+  cnes           String?
+  documentNumber String?
+  isActive       Boolean  @default(true)
+  isMain         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization       Organization        @relation(fields: [organizationId], references: [id])
+  membershipBranches MembershipBranch[]
+  rooms              Room[]
+  scheduleTemplates  ScheduleTemplate[]
+  appointments       Appointment[]
+  cashRegisters      CashRegister[]
+  stockLocations     StockLocation[]
+  tissGuides         TissGuide[]
+  tissBatches        TissBatch[]
+  rndsCredentials    RndsCredential[]
+
+  @@index([organizationId])
+  @@index([isActive])
+}
+
+model MembershipBranch {
+  id           String @id @default(cuid())
+  membershipId String
+  branchId     String
+
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  branch     Branch     @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, branchId])
+  @@index([branchId])
+}
+
+model PermissionProfile {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  roleTemplate   Role?
+  permissions    Json     @default("{}")
+  limits         Json     @default("{}")
+  isDefault      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  memberships  Membership[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  organizationId         String             @unique
+  plan                   SubscriptionPlan   @default(BASICO)
+  cycle                  SubscriptionCycle  @default(MONTHLY)
+  status                 SubscriptionStatus @default(TRIAL)
+  trialEndsAt            DateTime?
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  gracePeriodEndsAt      DateTime?
+  externalCustomerId     String?
+  externalSubscriptionId String?
+  limits                 Json               @default("{}")
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  organization Organization          @relation(fields: [organizationId], references: [id])
+  invoices     SubscriptionInvoice[]
+
+  @@index([status])
+}
+
+model SubscriptionInvoice {
+  id             String   @id @default(cuid())
+  subscriptionId String
+  amountCents    Int
+  status         String   @default("PENDING")
+  periodStart    DateTime
+  periodEnd      DateTime
+  paidAt         DateTime?
+  externalId     String?
+  createdAt      DateTime @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([subscriptionId])
+  @@index([status])
+}
+
+model BillingWebhookEvent {
+  id             String   @id @default(cuid())
+  eventId        String   @unique
+  organizationId String?
+  eventType      String
+  processedAt    DateTime @default(now())
+
+  @@index([organizationId])
+}
+
+model ProcessedStripeEvent {
+  id             String   @id @default(cuid())
+  eventId        String   @unique
+  type           String
+  status         String
+  error          String?
+  organizationId String?
+  processedAt    DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([processedAt])
+}
+
+model OnboardingProgress {
+  id             String    @id @default(cuid())
+  organizationId String    @unique
+  steps          Json      @default("{}")
+  completedAt    DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
+enum OrganizationExportStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  EXPIRED
+}
+
+model OrganizationExport {
+  id             String                   @id @default(cuid())
+  organizationId String
+  requestedById  String
+  status         OrganizationExportStatus @default(PENDING)
+  storageKey     String?
+  downloadToken  String?                  @unique
+  expiresAt      DateTime?
+  errorMessage   String?
+  createdAt      DateTime                 @default(now())
+  completedAt    DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+enum ApiClientEnvironment {
+  SANDBOX
+  PRODUCTION
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  DLQ
+}
+
+model ApiClient {
+  id                          String               @id @default(cuid())
+  organizationId              String
+  name                        String
+  environment                 ApiClientEnvironment @default(SANDBOX)
+  isActive                    Boolean              @default(true)
+  clinicalAccessEnabled       Boolean              @default(false)
+  clinicalAccessJustification String?
+  clinicalAccessEnabledAt     DateTime?
+  createdAt                   DateTime             @default(now())
+  updatedAt                   DateTime             @updatedAt
+
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  keys              ApiKey[]
+  requestLogs       ApiRequestLog[]
+  webhookEndpoints  WebhookEndpoint[]
+  idempotencyKeys   ApiIdempotencyRecord[]
+
+  @@index([organizationId])
+}
+
+model ApiKey {
+  id             String    @id @default(cuid())
+  apiClientId    String
+  organizationId String
+  keyPrefix      String    @unique
+  secretHash     String
+  scopes         String[]
+  expiresAt      DateTime?
+  lastUsedAt     DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  apiClient       ApiClient              @relation(fields: [apiClientId], references: [id], onDelete: Cascade)
+  requestLogs     ApiRequestLog[]
+  idempotencyKeys ApiIdempotencyRecord[]
+
+  @@index([organizationId])
+  @@index([apiClientId])
+}
+
+model ApiIdempotencyRecord {
+  id             String   @id @default(cuid())
+  organizationId String
+  apiClientId    String
+  apiKeyId       String
+  idempotencyKey String
+  method         String
+  path           String
+  statusCode     Int
+  responseBody   Json
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  apiClient ApiClient @relation(fields: [apiClientId], references: [id], onDelete: Cascade)
+  apiKey    ApiKey    @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@unique([apiKeyId, idempotencyKey])
+  @@index([expiresAt])
+}
+
+model ApiRequestLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  apiClientId    String
+  apiKeyId       String
+  method         String
+  route          String
+  statusCode     Int
+  latencyMs      Int
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+
+  apiClient ApiClient @relation(fields: [apiClientId], references: [id], onDelete: Cascade)
+  apiKey    ApiKey    @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, apiClientId, createdAt])
+  @@index([apiKeyId, createdAt])
+}
+
+model WebhookEndpoint {
+  id                  String   @id @default(cuid())
+  organizationId      String
+  apiClientId         String
+  url                 String
+  secret              String
+  events              String[]
+  isActive            Boolean  @default(true)
+  consecutiveFailures Int      @default(0)
+  disabledAt          DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  apiClient  ApiClient         @relation(fields: [apiClientId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([organizationId])
+  @@index([apiClientId])
+}
+
+model WebhookDelivery {
+  id                String                @id @default(cuid())
+  webhookEndpointId String
+  organizationId    String
+  eventType         String
+  payload           Json
+  status            WebhookDeliveryStatus @default(PENDING)
+  attemptCount      Int                   @default(0)
+  lastAttemptAt     DateTime?
+  nextRetryAt       DateTime?
+  responseStatus    Int?
+  lastError         String?
+  createdAt         DateTime              @default(now())
+
+  webhookEndpoint WebhookEndpoint @relation(fields: [webhookEndpointId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@index([webhookEndpointId])
+  @@index([nextRetryAt])
+}
+
+enum AiResourceType {
+  VIRTUAL_SECRETARY
+  CLINICAL_COPILOT
+  SMART_COLLECTION
+  NO_SHOW_SCORING
+  BI_INSIGHTS
+  GLOSA_DRAFT
+  SMART_SEARCH
+}
+
+enum AiInteractionOutcome {
+  PENDING
+  ACCEPTED
+  EDITED
+  REJECTED
+}
+
+enum AiConversationStatus {
+  ACTIVE
+  COMPLETED
+  HANDOFF
+}
+
+enum AiConversationMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model AiSettings {
+  id                  String   @id @default(cuid())
+  organizationId      String   @unique
+  enabledResources    Json     @default("{}")
+  model               String   @default("claude-3-5-sonnet-latest")
+  temperature         Float    @default(0.3)
+  language            String   @default("pt-BR")
+  silenceStartHour    Int?
+  silenceEndHour      Int?
+  monthlyTokenLimit   Int      @default(500000)
+  monthlyAlertSentAt  DateTime?
+  discardAudioAfterTranscription Boolean @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
+model AiDataProcessingConsent {
+  id              String         @id @default(cuid())
+  organizationId  String
+  resource        AiResourceType
+  termVersion     String
+  grantedByUserId String
+  grantedAt       DateTime       @default(now())
+  revokedAt       DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, resource])
+  @@index([organizationId])
+}
+
+model AiInteractionLog {
+  id               String               @id @default(cuid())
+  organizationId   String
+  userId           String?
+  resource         AiResourceType
+  tokensUsed       Int                  @default(0)
+  latencyMs        Int                  @default(0)
+  outcome          AiInteractionOutcome @default(PENDING)
+  payloadEncrypted String?
+  createdAt        DateTime             @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, resource, createdAt])
+}
+
+model AiUsageMonthly {
+  id             String @id @default(cuid())
+  organizationId String
+  yearMonth      String
+  tokensUsed     Int    @default(0)
+  requestCount   Int    @default(0)
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, yearMonth])
+}
+
+model AiFaq {
+  id             String   @id @default(cuid())
+  organizationId String
+  question       String
+  answer         String
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, isActive])
+}
+
+model AiConversation {
+  id                      String               @id @default(cuid())
+  organizationId          String
+  channel                 CommunicationChannel @default(WHATSAPP)
+  externalPhone           String
+  patientId               String?
+  status                  AiConversationStatus @default(ACTIVE)
+  lastIntent              String?
+  outcome                 String?
+  handoffContextEncrypted String?
+  sessionState            Json                 @default("{}")
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+
+  organization Organization            @relation(fields: [organizationId], references: [id])
+  patient      Patient?                @relation(fields: [patientId], references: [id])
+  messages     AiConversationMessage[]
+
+  @@index([organizationId, externalPhone])
+  @@index([organizationId, status])
+}
+
+model AiConversationMessage {
+  id               String                    @id @default(cuid())
+  organizationId   String
+  conversationId   String
+  role             AiConversationMessageRole
+  contentEncrypted String
+  metadata         Json                      @default("{}")
+  createdAt        DateTime                  @default(now())
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([organizationId])
+}
+
+enum LeadStatus {
+  NOVO
+  EM_CONTATO
+  AGENDOU
+  COMPARECEU
+  CONVERTIDO
+  PERDIDO
+}
+
+enum LeadInteractionType {
+  LIGACAO
+  WHATSAPP
+  EMAIL
+  NOTA
+}
+
+enum ReferralRewardType {
+  DESCONTO
+  CORTESIA
+}
+
+enum ReferralStatus {
+  PENDENTE
+  AGENDOU
+  COMPARECEU
+  PREMIADA
+  REJEITADA
+}
+
+enum TestimonialStatus {
+  SOLICITADO
+  RECEBIDO
+  APROVADO
+  PUBLICADO
+  REJEITADO
+}
+
+model LeadSource {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  campaigns    MarketingCampaign[]
+  leads        Lead[]
+  patients     Patient[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+}
+
+model MarketingCampaign {
+  id              String   @id @default(cuid())
+  organizationId  String
+  name            String
+  leadSourceId    String?
+  channel         String
+  periodStart     DateTime @db.Date
+  periodEnd       DateTime @db.Date
+  investmentCents Int      @default(0)
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  utmTerm         String?
+  utmContent      String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  leadSource   LeadSource?  @relation(fields: [leadSourceId], references: [id])
+  leads        Lead[]
+  trackedLinks TrackedLink[]
+  patients     Patient[]
+
+  @@index([organizationId])
+  @@index([leadSourceId])
+}
+
+model Lead {
+  id                  String     @id @default(cuid())
+  organizationId      String
+  branchId            String?
+  fullName            String
+  phoneSearch         String?
+  email               String?
+  interestServiceId   String?
+  leadSourceId        String?
+  marketingCampaignId String?
+  utmSource           String?
+  utmMedium           String?
+  utmCampaign         String?
+  utmTerm             String?
+  utmContent          String?
+  status              LeadStatus @default(NOVO)
+  lossReason          String?
+  assignedUserId      String?
+  marketingConsentAt  DateTime?
+  marketingConsentIp  String?
+  patientId           String?
+  appointmentId       String?
+  lastContactAt       DateTime?
+  lastStatusAt        DateTime   @default(now())
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  leadSource        LeadSource?        @relation(fields: [leadSourceId], references: [id])
+  marketingCampaign MarketingCampaign? @relation(fields: [marketingCampaignId], references: [id])
+  patient           Patient?           @relation(fields: [patientId], references: [id])
+  interactions      LeadInteraction[]
+  followUpLogs      LeadFollowUpLog[]
+  referrals         Referral[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, phoneSearch])
+  @@index([leadSourceId])
+  @@index([marketingCampaignId])
+  @@index([patientId])
+}
+
+model LeadInteraction {
+  id             String              @id @default(cuid())
+  organizationId String
+  leadId         String
+  type           LeadInteractionType
+  notes          String
+  userId         String
+  createdAt      DateTime            @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  lead         Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@index([organizationId])
+}
+
+model LeadFollowUpLog {
+  id             String               @id @default(cuid())
+  organizationId String
+  leadId         String
+  templateId     String?
+  channel        CommunicationChannel
+  renderedBody   String
+  status         CommunicationStatus  @default(FILA)
+  scheduledFor   DateTime?
+  sentAt         DateTime?
+  failReason     String?
+  idempotencyKey String               @unique
+  createdAt      DateTime             @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  lead         Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, leadId])
+  @@index([status, scheduledFor])
+}
+
+model LandingPage {
+  id              String    @id @default(cuid())
+  organizationId  String
+  slug            String
+  title           String
+  metaDescription String?
+  ogImageUrl      String?
+  blocks          Json      @default("[]")
+  theme           Json      @default("{}")
+  published       Boolean   @default(false)
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, published])
+}
+
+model TrackedLink {
+  id                  String   @id @default(cuid())
+  organizationId      String
+  code                String   @unique
+  marketingCampaignId String?
+  targetUrl           String
+  clickCount          Int      @default(0)
+  createdAt           DateTime @default(now())
+
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  marketingCampaign MarketingCampaign? @relation(fields: [marketingCampaignId], references: [id])
+
+  @@index([organizationId])
+}
+
+model ReferralProgram {
+  id                 String             @id @default(cuid())
+  organizationId     String             @unique
+  isActive           Boolean            @default(true)
+  rewardType         ReferralRewardType @default(DESCONTO)
+  rewardValue        String
+  maxPerPatientMonth Int                @default(3)
+  terms              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  referrals    Referral[]
+}
+
+model Referral {
+  id                 String         @id @default(cuid())
+  organizationId     String
+  programId          String
+  referrerPatientId  String
+  referredLeadId     String?
+  referredPatientId  String?
+  status             ReferralStatus @default(PENDENTE)
+  rewardedAt         DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  organization    Organization    @relation(fields: [organizationId], references: [id])
+  program         ReferralProgram @relation(fields: [programId], references: [id])
+  referrerPatient Patient         @relation("ReferrerPatient", fields: [referrerPatientId], references: [id])
+  referredLead    Lead?           @relation(fields: [referredLeadId], references: [id])
+  referredPatient Patient?        @relation("ReferredPatient", fields: [referredPatientId], references: [id])
+
+  @@index([organizationId])
+  @@index([referrerPatientId])
+}
+
+model Testimonial {
+  id             String            @id @default(cuid())
+  organizationId String
+  patientId      String?
+  authorName     String
+  content        String
+  consentAt      DateTime?
+  consentIp      String?
+  status         TestimonialStatus @default(SOLICITADO)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient?     @relation(fields: [patientId], references: [id])
+
+  @@index([organizationId, status])
+}
+
+model LeadOptOut {
+  id             String   @id @default(cuid())
+  organizationId String
+  phoneSearch    String?
+  email          String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, phoneSearch])
+  @@index([organizationId, email])
+}
+
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  passwordHash  String?
-  emailVerified DateTime?
-  image         String?
-  isSuperAdmin  Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  passwordHash   String?
+  emailVerified  DateTime?
+  image          String?
+  isSuperAdmin   Boolean   @default(false)
+  sessionVersion Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
   memberships     Membership[]
   invitationsSent Invitation[] @relation("InvitedBy")
   auditLogs       AuditLog[]
+  userNotifications UserNotification[]
+  notificationPreferences UserNotificationPreference[]
+  pushSubscriptions       PushSubscription[]
+  mobileSyncLogs          MobileSyncLog[]
+  mobileIdempotencyRecords MobileIdempotencyRecord[]
+  reportPreferences UserReportPreference[]
+  leadInteractions LeadInteraction[]
 
   @@index([deletedAt])
 }
@@ -86,19 +4290,25 @@ model Membership {
   userId              String
   organizationId      String
   role                Role
+  permissionProfileId String?
+  branchAccessAll     Boolean   @default(true)
   professionalCouncil String?
   councilNumber       String?
   councilState        String?
   isActive            Boolean   @default(true)
+  sessionVersion      Int       @default(0)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   deletedAt           DateTime?
 
-  user         User         @relation(fields: [userId], references: [id])
-  organization Organization @relation(fields: [organizationId], references: [id])
+  user              User               @relation(fields: [userId], references: [id])
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  permissionProfile PermissionProfile? @relation(fields: [permissionProfileId], references: [id])
+  membershipBranches MembershipBranch[]
 
   @@unique([userId, organizationId])
   @@index([organizationId])
+  @@index([permissionProfileId])
   @@index([deletedAt])
 }
 
