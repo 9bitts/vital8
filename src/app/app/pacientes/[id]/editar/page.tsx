@@ -8,7 +8,7 @@ type Props = {
 };
 
 export default async function EditarPacientePage({ params }: Props) {
-  await requireAuth(["OWNER", "ADMIN", "PROFISSIONAL_SAUDE", "RECEPCAO"]);
+  const ctx = await requireAuth(["OWNER", "ADMIN", "PROFISSIONAL_SAUDE", "RECEPCAO"]);
   const data = await getPatientAction(params.id);
 
   if (!data) notFound();
@@ -19,7 +19,7 @@ export default async function EditarPacientePage({ params }: Props) {
         <h1 className="text-2xl font-semibold tracking-tight">Editar paciente</h1>
         <p className="text-zinc-600">{data.patient.fullName}</p>
       </div>
-      <PatientForm mode="edit" patientId={params.id} initialData={data} />
+      <PatientForm mode="edit" patientId={params.id} initialData={data} role={ctx.role} />
     </div>
   );
 }

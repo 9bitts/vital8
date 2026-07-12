@@ -43,7 +43,7 @@ describe("Patient tenant isolation", () => {
         searchName: normalizeSearchName("Maria Org A"),
         fullName: "Maria Org A",
         cpfEncrypted: encryptPHI("52998224725"),
-        cpfHash: hashCpf("52998224725"),
+        cpfHash: hashCpf("52998224725", orgAId),
       },
     });
 
@@ -53,7 +53,7 @@ describe("Patient tenant isolation", () => {
         searchName: normalizeSearchName("João Org B"),
         fullName: "João Org B",
         cpfEncrypted: encryptPHI("39053344705"),
-        cpfHash: hashCpf("39053344705"),
+        cpfHash: hashCpf("39053344705", orgBId),
       },
     });
 

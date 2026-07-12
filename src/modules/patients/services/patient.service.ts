@@ -121,6 +121,7 @@ function buildPhoneSearch(phones: PatientPhone[]): string | null {
 }
 
 function buildPatientDbData(
+  organizationId: string,
   personal: PatientPersonalInput,
   contact?: PatientContactInput,
 ) {
@@ -131,7 +132,7 @@ function buildPatientDbData(
     fullName: personal.fullName.trim(),
     socialName: personal.socialName?.trim() || null,
     cpfEncrypted: personal.cpf ? encryptPHI(personal.cpf) : null,
-    cpfHash: personal.cpf ? hashCpf(personal.cpf) : null,
+    cpfHash: personal.cpf ? hashCpf(personal.cpf, organizationId) : null,
     rgEncrypted: encryptOptional(personal.rg),
     birthDate: personal.birthDate ? new Date(personal.birthDate) : null,
     sex: personal.sex ?? null,
@@ -176,12 +177,13 @@ export async function createFullPatient(
   contact?: PatientContactInput,
 ) {
   return db.patient.create({
-    data: { organizationId, ...buildPatientDbData(personal, contact) },
+    data: { organizationId, ...buildPatientDbData(organizationId, personal, contact) },
   });
 }
 
 export async function updatePatientPersonal(
   db: TenantClient,
+  organizationId: string,
   patientId: string,
   personal: PatientPersonalInput,
 ) {
@@ -192,7 +194,7 @@ export async function updatePatientPersonal(
       fullName: personal.fullName.trim(),
       socialName: personal.socialName?.trim() || null,
       cpfEncrypted: personal.cpf ? encryptPHI(personal.cpf) : null,
-      cpfHash: personal.cpf ? hashCpf(personal.cpf) : null,
+      cpfHash: personal.cpf ? hashCpf(personal.cpf, organizationId) : null,
       rgEncrypted: encryptOptional(personal.rg),
       birthDate: personal.birthDate ? new Date(personal.birthDate) : null,
       sex: personal.sex ?? null,
@@ -242,12 +244,15 @@ export async function getPatientById(db: TenantClient, patientId: string) {
 }
 
 export type PatientListFilters = {
+  organizationId: string;
   query?: string;
   tag?: string;
   insurer?: string;
   includeInactive?: boolean;
   page?: number;
   pageSize?: number;
+  sortBy?: "fullName" | "createdAt" | "birthDate";
+  sortOrder?: "asc" | "desc";
 };
 
 function digitsOnly(value: string): string {
@@ -283,7 +288,9 @@ export async function searchPatients(
     ];
 
     if (digits.length === 11) {
-      orConditions.push({ cpfHash: hashCpf(digits) });
+      orConditions.push({
+        cpfHash: hashCpf(digits, filters.organizationId),
+      });
     }
 
     if (digits.length >= 8) {
@@ -315,10 +322,13 @@ export async function searchPatients(
     where.id = { in: patientIds.length > 0 ? patientIds : ["__none__"] };
   }
 
+  const sortField = filters.sortBy ?? "fullName";
+  const sortOrder = filters.sortOrder ?? "asc";
+
   const [items, total] = await Promise.all([
     db.patient.findMany({
       where,
-      orderBy: { fullName: "asc" },
+      orderBy: { [sortField]: sortOrder },
       skip,
       take: pageSize,
       include: {
@@ -338,6 +348,49 @@ export async function searchPatients(
     pageSize,
     totalPages: Math.ceil(total / pageSize),
   };
+}
+
+export async function findDuplicatesForInput(
+  db: TenantClient,
+  organizationId: string,
+  input: { cpf?: string; fullName?: string; birthDate?: string },
+  excludePatientId?: string,
+) {
+  const matches: Patient[] = [];
+
+  if (input.cpf) {
+    const byCpf = await db.patient.findFirst({
+      where: {
+        cpfHash: hashCpf(input.cpf, organizationId),
+        ...(excludePatientId ? { id: { not: excludePatientId } } : {}),
+      },
+    });
+    if (byCpf) matches.push(byCpf);
+  }
+
+  if (input.fullName && input.birthDate) {
+    const byNameBirth = await db.patient.findMany({
+      where: {
+        searchName: normalizeSearchName(input.fullName),
+        birthDate: new Date(input.birthDate),
+        ...(excludePatientId ? { id: { not: excludePatientId } } : {}),
+      },
+    });
+    for (const p of byNameBirth) {
+      if (!matches.some((m) => m.id === p.id)) matches.push(p);
+    }
+  }
+
+  return matches.map(decryptPatientRecord);
+}
+
+export async function getPatientTimeline(db: TenantClient, patientId: string) {
+  return db.auditLog.findMany({
+    where: { entityType: "Patient", entityId: patientId },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    include: { user: { select: { id: true, name: true } } },
+  });
 }
 
 export async function findDuplicateCandidates(db: TenantClient) {

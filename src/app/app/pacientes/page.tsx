@@ -15,6 +15,8 @@ type Props = {
     insurer?: string;
     inativos?: string;
     page?: string;
+    sort?: string;
+    order?: string;
   };
 };
 
@@ -22,6 +24,9 @@ export default async function PacientesPage({ searchParams }: Props) {
   await requireAuth();
 
   const page = parseInt(searchParams.page ?? "1", 10);
+  const sortBy = (searchParams.sort ?? "fullName") as "fullName" | "createdAt" | "birthDate";
+  const sortOrder = (searchParams.order ?? "asc") as "asc" | "desc";
+
   const result = await listPatientsAction({
     query: searchParams.q,
     tag: searchParams.tag,
@@ -29,6 +34,8 @@ export default async function PacientesPage({ searchParams }: Props) {
     includeInactive: searchParams.inativos === "1",
     page,
     pageSize: 20,
+    sortBy,
+    sortOrder,
   });
 
   const [tags, insurers] = await Promise.all([
@@ -68,6 +75,8 @@ export default async function PacientesPage({ searchParams }: Props) {
         initialTag={searchParams.tag}
         initialInsurer={searchParams.insurer}
         initialIncludeInactive={searchParams.inativos === "1"}
+        initialSortBy={sortBy}
+        initialSortOrder={sortOrder}
       />
     </div>
   );

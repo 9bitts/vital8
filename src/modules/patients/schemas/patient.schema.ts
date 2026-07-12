@@ -146,6 +146,8 @@ export const patientSearchSchema = z.object({
   includeInactive: z.boolean().default(false),
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(100).default(20),
+  sortBy: z.enum(["fullName", "createdAt", "birthDate"]).default("fullName"),
+  sortOrder: z.enum(["asc", "desc"]).default("asc"),
 });
 
 export const mergePatientsSchema = z.object({
@@ -175,6 +177,20 @@ export const csvImportRowSchema = z.object({
 export const csvImportSchema = z.object({
   rows: z.array(csvImportRowSchema).min(1).max(500),
   skipDuplicates: z.boolean().default(true),
+  columnMapping: z.record(z.string(), z.string()).optional(),
+});
+
+export const checkDuplicateSchema = z.object({
+  cpf: z.string().optional(),
+  fullName: z.string().optional(),
+  birthDate: z.string().optional(),
+  excludePatientId: z.string().optional(),
+});
+
+export const anonymizePatientSchema = z.object({
+  patientId: z.string().min(1),
+  confirmName: z.string().min(1),
+  confirmPhrase: z.literal("ANONIMIZAR"),
 });
 
 export type PatientPersonalInput = z.infer<typeof patientPersonalSchema>;

@@ -32,6 +32,8 @@ type Props = {
   initialTag?: string;
   initialInsurer?: string;
   initialIncludeInactive?: boolean;
+  initialSortBy?: string;
+  initialSortOrder?: string;
 };
 
 export function PatientList({
@@ -42,12 +44,16 @@ export function PatientList({
   initialTag = "",
   initialInsurer = "",
   initialIncludeInactive = false,
+  initialSortBy = "fullName",
+  initialSortOrder = "asc",
 }: Props) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const [tag, setTag] = useState(initialTag);
   const [insurer, setInsurer] = useState(initialInsurer);
   const [includeInactive, setIncludeInactive] = useState(initialIncludeInactive);
+  const [sortBy, setSortBy] = useState(initialSortBy);
+  const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const [quickName, setQuickName] = useState("");
   const [quickPhone, setQuickPhone] = useState("");
   const [quickError, setQuickError] = useState("");
@@ -60,6 +66,8 @@ export function PatientList({
     if (tag) params.set("tag", tag);
     if (insurer) params.set("insurer", insurer);
     if (includeInactive) params.set("inativos", "1");
+    if (sortBy !== "fullName") params.set("sort", sortBy);
+    if (sortOrder !== "asc") params.set("order", sortOrder);
     router.push(`/app/pacientes?${params.toString()}`);
   }
 
@@ -136,6 +144,24 @@ export function PatientList({
           />
           Inativos
         </label>
+        <div className="w-36">
+          <Label htmlFor="sort">Ordenar</Label>
+          <select
+            id="sort"
+            className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm"
+            value={`${sortBy}-${sortOrder}`}
+            onChange={(e) => {
+              const [sb, so] = e.target.value.split("-");
+              setSortBy(sb!);
+              setSortOrder(so!);
+            }}
+          >
+            <option value="fullName-asc">Nome A-Z</option>
+            <option value="fullName-desc">Nome Z-A</option>
+            <option value="createdAt-desc">Mais recentes</option>
+            <option value="birthDate-asc">Nascimento</option>
+          </select>
+        </div>
         <Button onClick={applyFilters} disabled={isPending}>
           Filtrar
         </Button>

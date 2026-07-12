@@ -2,13 +2,21 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import type { Role } from "@/generated/prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { maskCpfInput, maskPhoneInput } from "@/lib/crypto/search-hash";
 import {
+  canAdminPatients,
+  canViewPatientHealth,
+} from "@/modules/patients/lib/permissions";
+import {
+  checkDuplicatePatientAction,
   createPatientAction,
+  lookupCepAction,
   updatePatientContactAction,
   updatePatientPersonalAction,
   upsertAllergyAction,
@@ -25,15 +33,54 @@ type Props = {
   patientId?: string;
   initialData?: LgpdExportData;
   mode: "create" | "edit";
+  role: Role;
 };
 
-export function PatientForm({ patientId, initialData, mode }: Props) {
+export function PatientForm({ patientId, initialData, mode, role }: Props) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [duplicateWarning, setDuplicateWarning] = useState("");
+  const [cpfValue, setCpfValue] = useState(initialData?.patient.cpf ?? "");
+  const [phoneValue, setPhoneValue] = useState(
+    initialData?.patient.phones[0]?.number ?? "",
+  );
   const [isPending, startTransition] = useTransition();
 
   const p = initialData?.patient;
+  const showHealth = canViewPatientHealth(role);
+  const showLgpdAdmin = canAdminPatients(role) && mode === "edit";
+
+  async function checkDuplicates(cpf?: string, fullName?: string, birthDate?: string) {
+    const result = await checkDuplicatePatientAction({
+      cpf,
+      fullName,
+      birthDate,
+      excludePatientId: patientId,
+    });
+    if (result.success && result.data!.duplicates.length > 0) {
+      setDuplicateWarning(
+        `Possível duplicado: ${result.data!.duplicates.map((d) => d.fullName).join(", ")}`,
+      );
+    } else {
+      setDuplicateWarning("");
+    }
+  }
+
+  async function handleCepLookup(cep: string) {
+    const result = await lookupCepAction(cep);
+    if (!result.success) return;
+    const form = document.getElementById("contact-form") as HTMLFormElement | null;
+    if (!form) return;
+    (form.elements.namedItem("street") as HTMLInputElement).value =
+      result.data.street;
+    (form.elements.namedItem("neighborhood") as HTMLInputElement).value =
+      result.data.neighborhood;
+    (form.elements.namedItem("city") as HTMLInputElement).value =
+      result.data.city;
+    (form.elements.namedItem("state") as HTMLInputElement).value =
+      result.data.state;
+  }
 
   async function handlePersonalSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -200,16 +247,24 @@ export function PatientForm({ patientId, initialData, mode }: Props) {
       {error && <p className="text-sm text-red-600">{error}</p>}
       {success && <p className="text-sm text-green-600">{success}</p>}
 
+      {duplicateWarning && (
+        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+          {duplicateWarning}
+        </p>
+      )}
+
       <Tabs defaultValue="personal">
-        <TabsList>
+        <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="personal">Dados pessoais</TabsTrigger>
           {mode === "edit" && (
             <>
-              <TabsTrigger value="contact">Contato</TabsTrigger>
+              <TabsTrigger value="contact">Contato e endereço</TabsTrigger>
               <TabsTrigger value="insurance">Convênios</TabsTrigger>
-              <TabsTrigger value="health">Saúde</TabsTrigger>
+              {showHealth && <TabsTrigger value="health">Saúde</TabsTrigger>}
               <TabsTrigger value="documents">Documentos</TabsTrigger>
-              <TabsTrigger value="lgpd">LGPD</TabsTrigger>
+              {(showLgpdAdmin || mode === "edit") && (
+                <TabsTrigger value="lgpd">LGPD</TabsTrigger>
+              )}
             </>
           )}
         </TabsList>
@@ -227,7 +282,21 @@ export function PatientForm({ patientId, initialData, mode }: Props) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="cpf">CPF</Label>
-                <Input id="cpf" name="cpf" defaultValue={p?.cpf ?? ""} />
+                <Input
+                  id="cpf"
+                  name="cpf"
+                  value={cpfValue}
+                  onChange={(e) => setCpfValue(maskCpfInput(e.target.value))}
+                  onBlur={(e) => {
+                    const form = e.currentTarget.form;
+                    if (!form) return;
+                    void checkDuplicates(
+                      e.target.value,
+                      (form.elements.namedItem("fullName") as HTMLInputElement).value,
+                      (form.elements.namedItem("birthDate") as HTMLInputElement).value,
+                    );
+                  }}
+                />
               </div>
               <div>
                 <Label htmlFor="rg">RG</Label>
@@ -268,7 +337,13 @@ export function PatientForm({ patientId, initialData, mode }: Props) {
               <>
                 <div>
                   <Label htmlFor="phone">Telefone *</Label>
-                  <Input id="phone" name="phone" required />
+                  <Input
+                    id="phone"
+                    name="phone"
+                    required
+                    value={phoneValue}
+                    onChange={(e) => setPhoneValue(maskPhoneInput(e.target.value))}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="email">E-mail</Label>
@@ -307,13 +382,14 @@ export function PatientForm({ patientId, initialData, mode }: Props) {
         {mode === "edit" && patientId && (
           <>
             <TabsContent value="contact">
-              <form onSubmit={handleContactSubmit} className="max-w-xl space-y-4 pt-4">
+              <form id="contact-form" onSubmit={handleContactSubmit} className="max-w-xl space-y-4 pt-4">
                 <div>
                   <Label htmlFor="phone">Telefone principal</Label>
                   <Input
                     id="phone"
                     name="phone"
-                    defaultValue={p?.phones[0]?.number ?? ""}
+                    value={phoneValue}
+                    onChange={(e) => setPhoneValue(maskPhoneInput(e.target.value))}
                   />
                 </div>
                 <div>
@@ -323,7 +399,31 @@ export function PatientForm({ patientId, initialData, mode }: Props) {
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="cep">CEP</Label>
-                    <Input id="cep" name="cep" defaultValue={p?.address?.cep ?? ""} />
+                    <div className="flex gap-2">
+                      <Input
+                        id="cep"
+                        name="cep"
+                        defaultValue={p?.address?.cep ?? ""}
+                        onBlur={(e) => {
+                          if (e.target.value.replace(/\D/g, "").length === 8) {
+                            void handleCepLookup(e.target.value);
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const cep = (
+                            document.getElementById("cep") as HTMLInputElement
+                          )?.value;
+                          if (cep) void handleCepLookup(cep);
+                        }}
+                      >
+                        Buscar
+                      </Button>
+                    </div>
                   </div>
                   <div className="col-span-2">
                     <Label htmlFor="street">Logradouro</Label>
@@ -401,6 +501,7 @@ export function PatientForm({ patientId, initialData, mode }: Props) {
               </div>
             </TabsContent>
 
+            {showHealth && (
             <TabsContent value="health">
               <div className="grid gap-6 pt-4 md:grid-cols-3">
                 <form onSubmit={(e) => handleHealthSubmit("allergy", e)} className="space-y-2 rounded border p-4">
@@ -439,6 +540,7 @@ export function PatientForm({ patientId, initialData, mode }: Props) {
                 </form>
               </div>
             </TabsContent>
+            )}
 
             <TabsContent value="documents">
               <div className="space-y-4 pt-4">

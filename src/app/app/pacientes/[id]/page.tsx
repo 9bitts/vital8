@@ -1,7 +1,10 @@
-import { notFound } from "next/navigation";
+import Link from "next/link";
 import { requireAuth } from "@/lib/auth/guards";
 import { PatientProfile } from "@/modules/patients/components/patient-profile";
-import { getPatientAction } from "@/modules/patients/actions/patient.actions";
+import {
+  getPatientAction,
+  getPatientTimelineAction,
+} from "@/modules/patients/actions/patient.actions";
 
 type Props = {
   params: { id: string };
@@ -9,11 +12,21 @@ type Props = {
 
 export default async function PacienteDetailPage({ params }: Props) {
   const ctx = await requireAuth();
-  const data = await getPatientAction(params.id);
+  const [data, timeline] = await Promise.all([
+    getPatientAction(params.id),
+    getPatientTimelineAction(params.id),
+  ]);
 
-  if (!data) notFound();
+  if (!data) {
+    return (
+      <div>
+        <p>Paciente não encontrado</p>
+        <Link href="/app/pacientes">Voltar</Link>
+      </div>
+    );
+  }
 
-  const canAdmin = ctx.role === "OWNER" || ctx.role === "ADMIN";
-
-  return <PatientProfile data={data} canAdmin={canAdmin} />;
+  return (
+    <PatientProfile data={data} timeline={timeline} role={ctx.role} />
+  );
 }

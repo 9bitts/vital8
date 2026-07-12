@@ -4,7 +4,10 @@ import {
   isValidCpf,
   normalizeSearchName,
   normalizePhone,
+  calculateAge,
 } from "@/lib/crypto/search-hash";
+
+const ORG = "org-test-1";
 
 describe("search-hash utilities", () => {
   it("valida CPF correto", () => {
@@ -16,10 +19,12 @@ describe("search-hash utilities", () => {
     expect(isValidCpf("123")).toBe(false);
   });
 
-  it("gera hash determinístico para CPF", () => {
-    const a = hashCpf("529.982.247-25");
-    const b = hashCpf("52998224725");
+  it("gera HMAC determinístico por organização", () => {
+    const a = hashCpf("529.982.247-25", ORG);
+    const b = hashCpf("52998224725", ORG);
+    const c = hashCpf("52998224725", "org-test-2");
     expect(a).toBe(b);
+    expect(a).not.toBe(c);
     expect(a).toHaveLength(64);
   });
 
@@ -30,5 +35,11 @@ describe("search-hash utilities", () => {
 
   it("normaliza telefone", () => {
     expect(normalizePhone("(11) 99999-8888")).toBe("11999998888");
+  });
+
+  it("calcula idade", () => {
+    const birth = new Date();
+    birth.setFullYear(birth.getFullYear() - 30);
+    expect(calculateAge(birth)).toBe(30);
   });
 });

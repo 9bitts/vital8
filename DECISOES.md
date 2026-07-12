@@ -55,11 +55,25 @@ Registro de decisões tomadas na Fase 1 quando há trade-offs ou dependências d
 **Decisão:** CPF, RG, telefones, e-mail, endereço e observações clínicas são criptografados com AES-256-GCM (`phi.ts`). Campos derivados em claro para busca:
 
 - `searchName` — nome normalizado (sem acentos, minúsculas)
-- `cpfHash` — SHA-256 do CPF normalizado, unique por `(organizationId, cpfHash)`
+- `cpfHash` — HMAC-SHA256 do CPF normalizado com `CPF_HASH_KEY` dedicada, escopado por `organizationId` (formato `{orgId}:{cpf}`)
 - `phoneSearch` — dígitos do telefone principal (busca parcial)
 - `cardNumberSearch` — últimos 6 dígitos da carteirinha
 
-**Trade-off:** Telefone e carteirinha parcialmente indexáveis em claro para performance de busca na recepção. CPF nunca fica em claro no banco.
+**Trade-off:** Telefone e carteirinha parcialmente indexáveis em claro para performance de busca na recepção. CPF nunca fica em claro no banco; hash usa chave dedicada separada de `PHI_ENCRYPTION_KEY`.
+
+## ViaCEP (Fase 2)
+
+**Decisão:** Busca de endereço via `ViaCepAdapter` (API pública gratuita) com fallback manual nos campos.
+
+**Motivo:** UX de cadastro; serviço externo não obrigatório — usuário pode preencher manualmente se offline.
+
+## Permissões aba Saúde (Fase 2)
+
+**Decisão:** Aba Saúde e mutações clínicas (alergias, condições, medicamentos) restritas a `OWNER`, `ADMIN`, `PROFISSIONAL_SAUDE`. `RECEPCAO` e `FINANCEIRO` não acessam.
+
+## Anonimização LGPD (Fase 2)
+
+**Decisão:** Confirmação dupla na UI (nome completo + digitar `ANONIMIZAR`); apenas `OWNER`/`ADMIN`.
 
 **Reversibilidade:** Busca full-text cifrada (ex.: envelope encryption + blind index) pode substituir campos derivados se política de segurança exigir.
 

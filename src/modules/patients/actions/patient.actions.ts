@@ -14,6 +14,8 @@ import { getStorageAdapter } from "@/lib/integrations/storage";
 import { createAuditLog } from "@/modules/core/services/audit.service";
 import {
   allergySchema,
+  anonymizePatientSchema,
+  checkDuplicateSchema,
   chronicConditionSchema,
   csvImportSchema,
   medicationSchema,
@@ -26,7 +28,10 @@ import {
   patientSearchSchema,
   quickPatientSchema,
 } from "@/modules/patients/schemas/patient.schema";
+import { canViewPatientHealth } from "@/modules/patients/lib/permissions";
 import { mergePatients } from "@/modules/patients/services/merge.service";
+import { generateLgpdPdf } from "@/modules/patients/services/lgpd-pdf.service";
+import { getCepLookupAdapter } from "@/lib/integrations/viacep";
 import {
   anonymizePatient,
   buildLgpdExport,
@@ -35,8 +40,10 @@ import {
   decryptPatientRecord,
   encryptCardNumber,
   findDuplicateCandidates,
+  findDuplicatesForInput,
   getBirthdayPatients,
   getPatientById,
+  getPatientTimeline,
   searchPatients,
   updatePatientContact,
   updatePatientPersonal,
@@ -49,16 +56,22 @@ const PATIENT_READ_ROLES = [
   "RECEPCAO",
   "FINANCEIRO",
   "LEITURA",
-] as const;
+] as const satisfies readonly import("@/generated/prisma/client").Role[];
 
 const PATIENT_WRITE_ROLES = [
   "OWNER",
   "ADMIN",
   "PROFISSIONAL_SAUDE",
   "RECEPCAO",
-] as const;
+] as const satisfies readonly import("@/generated/prisma/client").Role[];
 
-const PATIENT_ADMIN_ROLES = ["OWNER", "ADMIN"] as const;
+const PATIENT_ADMIN_ROLES = ["OWNER", "ADMIN"] as const satisfies readonly import("@/generated/prisma/client").Role[];
+
+const PATIENT_HEALTH_ROLES = [
+  "OWNER",
+  "ADMIN",
+  "PROFISSIONAL_SAUDE",
+] as const satisfies readonly import("@/generated/prisma/client").Role[];
 
 async function auditPatient(
   action: string,
@@ -101,7 +114,10 @@ export async function listPatientsAction(
       return { success: false, error: parsed.error.issues[0]?.message ?? "Filtros inválidos" };
     }
 
-    const result = await searchPatients(ctx.db, parsed.data);
+    const result = await searchPatients(ctx.db, {
+      ...parsed.data,
+      organizationId: ctx.organizationId,
+    });
     return {
       success: true,
       data: {
@@ -128,7 +144,63 @@ export async function getPatientAction(patientId: string) {
   if (!patient) return null;
 
   await auditPatient("patient.view", ctx, patientId);
-  return buildLgpdExport(patient);
+  const exportData = buildLgpdExport(patient);
+
+  if (!canViewPatientHealth(ctx.role)) {
+    return {
+      ...exportData,
+      allergies: [],
+      chronicConditions: [],
+      medications: [],
+    };
+  }
+
+  return exportData;
+}
+
+export async function getPatientTimelineAction(patientId: string) {
+  const ctx = await requireAuth([...PATIENT_READ_ROLES]);
+  return getPatientTimeline(ctx.db, patientId);
+}
+
+export async function lookupCepAction(cep: string) {
+  await requireAuth([...PATIENT_WRITE_ROLES]);
+  const adapter = getCepLookupAdapter();
+  const address = await adapter.lookup(cep);
+  if (!address) {
+    return { success: false as const, error: "CEP não encontrado" };
+  }
+  return { success: true as const, data: address };
+}
+
+export async function checkDuplicatePatientAction(
+  input: unknown,
+): Promise<ActionResult<{ duplicates: ReturnType<typeof decryptPatientRecord>[] }>> {
+  try {
+    const ctx = await requireAuth([...PATIENT_WRITE_ROLES]);
+    const parsed = checkDuplicateSchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
+    }
+
+    const duplicates = await findDuplicatesForInput(
+      ctx.db,
+      ctx.organizationId,
+      {
+        cpf: parsed.data.cpf,
+        fullName: parsed.data.fullName,
+        birthDate: parsed.data.birthDate,
+      },
+      parsed.data.excludePatientId,
+    );
+
+    return { success: true, data: { duplicates } };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: "Erro ao verificar duplicados" };
+  }
 }
 
 export async function createQuickPatientAction(
@@ -174,7 +246,7 @@ export async function createPatientAction(
 
     if (personal.data.cpf) {
       const existing = await ctx.db.patient.findFirst({
-        where: { cpfHash: hashCpf(personal.data.cpf) },
+        where: { cpfHash: hashCpf(personal.data.cpf, ctx.organizationId) },
       });
       if (existing) {
         return { success: false, error: "CPF já cadastrado nesta organização" };
@@ -213,7 +285,7 @@ export async function updatePatientPersonalAction(
     if (parsed.data.cpf) {
       const existing = await ctx.db.patient.findFirst({
         where: {
-          cpfHash: hashCpf(parsed.data.cpf),
+          cpfHash: hashCpf(parsed.data.cpf, ctx.organizationId),
           id: { not: patientId },
         },
       });
@@ -222,7 +294,12 @@ export async function updatePatientPersonalAction(
       }
     }
 
-    await updatePatientPersonal(ctx.db, patientId, parsed.data);
+    await updatePatientPersonal(
+      ctx.db,
+      ctx.organizationId,
+      patientId,
+      parsed.data,
+    );
     await auditPatient("patient.update.personal", ctx, patientId);
 
     revalidatePath(`/app/pacientes/${patientId}`);
@@ -257,6 +334,27 @@ export async function updatePatientContactAction(
       return { success: false, error: error.message };
     }
     return { success: false, error: "Erro ao atualizar contato" };
+  }
+}
+
+export async function inactivatePatientAction(
+  patientId: string,
+): Promise<ActionResult> {
+  try {
+    const ctx = await requireAuth([...PATIENT_WRITE_ROLES]);
+    await ctx.db.patient.update({
+      where: { id: patientId },
+      data: { isActive: false },
+    });
+    await auditPatient("patient.inactivate", ctx, patientId);
+    revalidatePath("/app/pacientes");
+    revalidatePath(`/app/pacientes/${patientId}`);
+    return { success: true };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: "Erro ao inativar paciente" };
   }
 }
 
@@ -388,7 +486,7 @@ export async function upsertAllergyAction(
   input: unknown,
 ): Promise<ActionResult> {
   try {
-    const ctx = await requireAuth([...PATIENT_WRITE_ROLES]);
+    const ctx = await requireAuth([...PATIENT_HEALTH_ROLES]);
     const parsed = allergySchema.safeParse(input);
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message ?? "Alergia inválida" };
@@ -423,7 +521,7 @@ export async function upsertChronicConditionAction(
   input: unknown,
 ): Promise<ActionResult> {
   try {
-    const ctx = await requireAuth([...PATIENT_WRITE_ROLES]);
+    const ctx = await requireAuth([...PATIENT_HEALTH_ROLES]);
     const parsed = chronicConditionSchema.safeParse(input);
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message ?? "Condição inválida" };
@@ -464,7 +562,7 @@ export async function upsertMedicationAction(
   input: unknown,
 ): Promise<ActionResult> {
   try {
-    const ctx = await requireAuth([...PATIENT_WRITE_ROLES]);
+    const ctx = await requireAuth([...PATIENT_HEALTH_ROLES]);
     const parsed = medicationSchema.safeParse(input);
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message ?? "Medicamento inválido" };
@@ -649,13 +747,56 @@ export async function exportLgpdAction(
   }
 }
 
-export async function anonymizePatientAction(
+export async function exportLgpdPdfAction(
   patientId: string,
+): Promise<ActionResult<string>> {
+  try {
+    const ctx = await requireAuth([...PATIENT_ADMIN_ROLES]);
+    const patient = await getPatientById(ctx.db, patientId);
+    if (!patient) {
+      return { success: false, error: "Paciente não encontrado" };
+    }
+
+    const exportData = buildLgpdExport(patient);
+    const pdf = generateLgpdPdf(exportData);
+    await auditPatient("patient.export.lgpd.pdf", ctx, patientId);
+
+    return { success: true, data: pdf.toString("base64") };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: "Erro ao gerar PDF" };
+  }
+}
+
+export async function anonymizePatientAction(
+  input: unknown,
 ): Promise<ActionResult> {
   try {
     const ctx = await requireAuth([...PATIENT_ADMIN_ROLES]);
-    await anonymizePatient(ctx.db, patientId);
-    await auditPatient("patient.anonymize", ctx, patientId);
+    const parsed = anonymizePatientSchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message ?? "Confirmação inválida" };
+    }
+
+    const patient = await getPatientById(ctx.db, parsed.data.patientId);
+    if (!patient) {
+      return { success: false, error: "Paciente não encontrado" };
+    }
+
+    if (
+      patient.fullName.trim().toLowerCase() !==
+      parsed.data.confirmName.trim().toLowerCase()
+    ) {
+      return {
+        success: false,
+        error: "Nome de confirmação não confere com o paciente",
+      };
+    }
+
+    await anonymizePatient(ctx.db, parsed.data.patientId);
+    await auditPatient("patient.anonymize", ctx, parsed.data.patientId);
 
     revalidatePath("/app/pacientes");
     return { success: true };
@@ -687,7 +828,7 @@ export async function importPatientsCsvAction(
       const row = parsed.data.rows[index]!;
       try {
         if (row.cpf) {
-          const hash = hashCpf(row.cpf);
+          const hash = hashCpf(row.cpf, ctx.organizationId);
           const existing = await ctx.db.patient.findFirst({
             where: { cpfHash: hash },
           });
@@ -708,7 +849,7 @@ export async function importPatientsCsvAction(
             searchName: normalizeSearchName(row.fullName),
             fullName: row.fullName.trim(),
             cpfEncrypted: row.cpf ? encryptPHI(row.cpf.replace(/\D/g, "")) : null,
-            cpfHash: row.cpf ? hashCpf(row.cpf) : null,
+            cpfHash: row.cpf ? hashCpf(row.cpf, ctx.organizationId) : null,
             phonesEncrypted: phones.length
               ? encryptPHI(JSON.stringify(phones))
               : null,

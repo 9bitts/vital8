@@ -76,7 +76,7 @@ export async function mergePatients(
       fullName: mergedName,
       socialName: mergedSocial,
       cpfEncrypted: mergedCpf ? encryptPHI(mergedCpf) : primary.cpfEncrypted,
-      cpfHash: mergedCpf ? hashCpf(mergedCpf) : primary.cpfHash,
+      cpfHash: mergedCpf ? hashCpf(mergedCpf, primary.organizationId) : primary.cpfHash,
       birthDate: mergedBirth ?? primary.birthDate,
       phonesEncrypted:
         mergedPhones.length > 0

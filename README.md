@@ -44,6 +44,9 @@ Gere chaves seguras (32 bytes em base64):
 
 # PHI_ENCRYPTION_KEY
 [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
+
+# CPF_HASH_KEY (mesmo formato — chave dedicada para HMAC do cpfHash)
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
 ```
 
 ### 3. Banco de dados
@@ -73,7 +76,7 @@ Senha para todas: `Vital8@dev`
 | bruno@multi.local | ADMIN + FINANCEIRO | Ambas (testar switcher) |
 | carla@vidaplena.local | RECEPCAO | Clínica Vida Plena |
 
-Pacientes seed (Clínica Vida Plena): Roberto Almeida, Fernanda Costa, Paciente Rápido (incompleto).
+Pacientes seed: 15 fictícios (10 Clínica Vida Plena + 5 Consultório Dr. Teste) — convênios, particular, menores, alergias.
 
 ## Testes
 
