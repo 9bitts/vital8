@@ -5,6 +5,7 @@ import { hashPassword } from "@/lib/auth/password";
 import { getRequestMeta, requireAuth } from "@/lib/auth/guards";
 import type { ActionResult } from "@/lib/auth/guards";
 import { adminPrisma } from "@/lib/db/admin-client";
+import { checkLoginRateLimit } from "@/lib/security/login-rate-limit";
 import { slugify } from "@/lib/utils";
 import {
   loginSchema,
@@ -108,6 +109,15 @@ export async function loginAction(input: unknown): Promise<ActionResult> {
   const parsed = loginSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
+  }
+
+  const meta = await getRequestMeta();
+  const limit = checkLoginRateLimit(
+    parsed.data.email,
+    meta.ipAddress ?? "unknown",
+  );
+  if (!limit.allowed) {
+    return { success: false, error: "Muitas tentativas. Aguarde e tente novamente." };
   }
 
   try {

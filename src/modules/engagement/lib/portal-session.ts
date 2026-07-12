@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from "crypto";
+import { createHash, randomBytes, randomInt, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { adminPrisma } from "@/lib/db/admin-client";
 
@@ -10,7 +10,7 @@ export function hashToken(token: string): string {
 }
 
 export function generateOtp(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(randomInt(100000, 1000000));
 }
 
 export function generateSessionToken(): string {
