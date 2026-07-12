@@ -18,17 +18,22 @@ export const authConfig = {
         token.name = user.name;
         token.organizationId = user.organizationId;
         token.role = user.role;
+        token.branchId = user.branchId ?? null;
       }
 
       if (trigger === "update" && session) {
         const updateSession = session as {
           organizationId?: string;
           role?: Role;
+          branchId?: string | null;
         };
 
         if (updateSession.organizationId && updateSession.role) {
           token.organizationId = updateSession.organizationId;
           token.role = updateSession.role;
+        }
+        if (updateSession.branchId !== undefined) {
+          token.branchId = updateSession.branchId;
         }
       }
 
@@ -44,6 +49,7 @@ export const authConfig = {
         },
         organizationId: token.organizationId as string,
         role: token.role as Role,
+        branchId: (token.branchId as string | null) ?? null,
       };
     },
   },
@@ -54,6 +60,7 @@ declare module "next-auth" {
   interface Session {
     organizationId: string;
     role: Role;
+    branchId: string | null;
     user: {
       id: string;
       email: string;
@@ -67,5 +74,15 @@ declare module "next-auth" {
     name: string;
     organizationId: string;
     role: Role;
+    branchId?: string | null;
+  }
+}
+
+declare module "@auth/core/jwt" {
+  interface JWT {
+    id?: string;
+    organizationId?: string;
+    role?: Role;
+    branchId?: string | null;
   }
 }

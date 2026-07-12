@@ -10,9 +10,11 @@
     "postinstall": "prisma generate",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
+    "db:seed:demo": "tsx prisma/seed-demo.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
@@ -37,11 +39,13 @@
     "prisma": "^7.8.0",
     "react": "^18",
     "react-dom": "^18",
+    "recharts": "^3.9.2",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.52.0",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",

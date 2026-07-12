@@ -4,26 +4,46 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Calendar,
+  ClipboardList,
   FileText,
   Home,
   Package,
+  MessageSquare,
   Settings,
   Stethoscope,
   Users,
   Wallet,
   BarChart3,
+  FileSpreadsheet,
+  Target,
+  CreditCard,
+  Activity,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
 
-const navItems = [
-  { href: "/app", label: "Início", icon: Home, active: true },
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  active: boolean;
+  badge?: string;
+};
+
+const navItems: NavItem[] = [
+  { href: "/app/dashboard", label: "Início", icon: Home, active: true },
   {
     href: "/app/agenda",
     label: "Agenda",
     icon: Calendar,
-    active: false,
-    badge: "Em breve",
+    active: true,
+  },
+  {
+    href: "/app/recepcao",
+    label: "Recepção",
+    icon: ClipboardList,
+    active: true,
   },
   {
     href: "/app/pacientes",
@@ -35,29 +55,55 @@ const navItems = [
     href: "/app/prontuario",
     label: "Prontuário",
     icon: Stethoscope,
-    active: false,
-    badge: "Em breve",
+    active: true,
   },
   {
     href: "/app/financeiro",
     label: "Financeiro",
     icon: Wallet,
-    active: false,
-    badge: "Em breve",
+    active: true,
+  },
+  {
+    href: "/app/faturamento",
+    label: "Faturamento",
+    icon: FileSpreadsheet,
+    active: true,
   },
   {
     href: "/app/estoque",
     label: "Estoque",
     icon: Package,
-    active: false,
-    badge: "Em breve",
+    active: true,
+  },
+  {
+    href: "/app/relacionamento",
+    label: "Relacionamento",
+    icon: MessageSquare,
+    active: true,
   },
   {
     href: "/app/relatorios",
     label: "Relatórios",
     icon: BarChart3,
-    active: false,
-    badge: "Em breve",
+    active: true,
+  },
+  {
+    href: "/app/metas",
+    label: "Metas",
+    icon: Target,
+    active: true,
+  },
+  {
+    href: "/app/assinatura",
+    label: "Assinatura",
+    icon: CreditCard,
+    active: true,
+  },
+  {
+    href: "/app/sistema",
+    label: "Sistema",
+    icon: Activity,
+    active: true,
   },
   {
     href: "/app/configuracoes",
@@ -96,7 +142,7 @@ export function AppSidebar() {
                   <Icon className="h-4 w-4" />
                   {item.label}
                 </span>
-                {item.badge && (
+                {"badge" in item && item.badge && (
                   <Badge variant="warning" className="text-[10px]">
                     {item.badge}
                   </Badge>

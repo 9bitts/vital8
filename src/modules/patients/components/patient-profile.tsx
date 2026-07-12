@@ -24,6 +24,8 @@ import {
   exportLgpdPdfAction,
   inactivatePatientAction,
 } from "@/modules/patients/actions/patient.actions";
+import { canViewAccessLog } from "@/modules/emr/lib/permissions";
+import { formatBRL } from "@/lib/money";
 import type { LgpdExportData } from "@/modules/patients/services/patient.service";
 
 type TimelineEntry = {
@@ -48,13 +50,74 @@ const ACTION_LABELS: Record<string, string> = {
   "patient.anonymize": "Paciente anonimizado",
 };
 
+type AppointmentEntry = {
+  id: string;
+  startsAt: Date;
+  status: string;
+  professional: { displayName: string };
+  service: { name: string };
+};
+
+type EmrHistory = {
+  encounters: Array<{
+    id: string;
+    startedAt: Date;
+    status: string;
+    specialty?: string | null;
+    professionalName?: string;
+  }>;
+  prescriptions: Array<{
+    id: string;
+    createdAt: Date;
+    type: string;
+    items: Array<{ drugName: string }>;
+  }>;
+};
+
+type AccessLogEntry = {
+  id: string;
+  resourceType: string;
+  resourceId: string;
+  action: string;
+  createdAt: Date;
+  userId: string | null;
+};
+
+type FinanceHistory = {
+  sales: Array<{
+    id: string;
+    createdAt: Date;
+    totalCents: number;
+    status: string;
+    items: Array<{ description: string }>;
+  }>;
+  payments: Array<{
+    id: string;
+    createdAt: Date;
+    amountCents: number;
+    method: string;
+  }>;
+};
+
 type Props = {
   data: LgpdExportData;
   timeline: TimelineEntry[];
+  appointments?: AppointmentEntry[];
+  emrHistory?: EmrHistory;
+  accessLogs?: AccessLogEntry[];
+  financeHistory?: FinanceHistory;
   role: Role;
 };
 
-export function PatientProfile({ data, timeline, role }: Props) {
+export function PatientProfile({
+  data,
+  timeline,
+  appointments = [],
+  emrHistory = { encounters: [], prescriptions: [] },
+  accessLogs = [],
+  financeHistory = { sales: [], payments: [] },
+  role,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
@@ -65,6 +128,7 @@ export function PatientProfile({ data, timeline, role }: Props) {
   const canAdmin = canAdminPatients(role);
   const canWrite = canWritePatients(role);
   const showHealth = canViewPatientHealth(role);
+  const showAccessLog = canViewAccessLog(role);
 
   const primaryInsurance = data.insurancePlans.find((pl) => pl.isPrimary) ?? data.insurancePlans[0];
   const age = p.birthDate ? calculateAge(new Date(p.birthDate)) : null;
@@ -328,11 +392,78 @@ export function PatientProfile({ data, timeline, role }: Props) {
               <span>Consentimento: {c.termKey}</span>
             </div>
           ))}
-          <p className="text-xs text-zinc-400 italic">
-            Consultas e pagamentos serão exibidos a partir da Fase 3.
-          </p>
+          {emrHistory.encounters.map((e) => (
+            <div key={e.id} className="flex gap-3 border-l-2 border-violet-200 pl-4">
+              <span className="text-zinc-400 shrink-0">
+                {new Date(e.startedAt).toLocaleString("pt-BR")}
+              </span>
+              <span>
+                Encontro ({e.specialty ?? "clínico"}) — {e.status}
+                {e.professionalName ? ` · ${e.professionalName}` : ""}
+              </span>
+            </div>
+          ))}
+          {emrHistory.prescriptions.map((rx) => (
+            <div key={rx.id} className="flex gap-3 border-l-2 border-emerald-200 pl-4">
+              <span className="text-zinc-400 shrink-0">
+                {new Date(rx.createdAt).toLocaleString("pt-BR")}
+              </span>
+              <span>
+                Prescrição: {rx.items.map((i) => i.drugName).join(", ")}
+              </span>
+            </div>
+          ))}
+          {financeHistory.sales.map((s) => (
+            <div key={s.id} className="flex gap-3 border-l-2 border-amber-200 pl-4">
+              <span className="text-zinc-400 shrink-0">
+                {new Date(s.createdAt).toLocaleString("pt-BR")}
+              </span>
+              <span>
+                Venda: {formatBRL(s.totalCents)} — {s.items.map((i) => i.description).join(", ")}
+              </span>
+            </div>
+          ))}
+          {financeHistory.payments.map((pay) => (
+            <div key={pay.id} className="flex gap-3 border-l-2 border-green-200 pl-4">
+              <span className="text-zinc-400 shrink-0">
+                {new Date(pay.createdAt).toLocaleString("pt-BR")}
+              </span>
+              <span>
+                Pagamento: {formatBRL(pay.amountCents)} ({pay.method})
+              </span>
+            </div>
+          ))}
+          {appointments.map((a) => (
+            <div key={a.id} className="flex gap-3 border-l-2 border-blue-200 pl-4">
+              <span className="text-zinc-400 shrink-0">
+                {new Date(a.startsAt).toLocaleString("pt-BR")}
+              </span>
+              <span>
+                Consulta: {a.service.name} com {a.professional.displayName} —{" "}
+                {a.status}
+              </span>
+            </div>
+          ))}
         </div>
       </section>
+
+      {showAccessLog && accessLogs.length > 0 && (
+        <section className="rounded-lg border p-4">
+          <h2 className="mb-3 font-medium">Acessos ao prontuário</h2>
+          <ul className="space-y-2 text-sm">
+            {accessLogs.map((log) => (
+              <li key={log.id} className="flex justify-between gap-2">
+                <span>
+                  {log.resourceType} · {log.action}
+                </span>
+                <span className="text-zinc-400 shrink-0">
+                  {new Date(log.createdAt).toLocaleString("pt-BR")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
