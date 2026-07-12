@@ -1,9 +1,18 @@
 "use client";
 
+import { Space_Grotesk } from "next/font/google";
 import { signIn } from "next-auth/react";
 import {
   DOCTOR8_CNPJ_LOGINS,
 } from "@/modules/core/components/doctor8-login-ctas";
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const INFINITY_PATH =
+  "M130 130 C130 62 250 62 250 130 C250 198 370 198 370 130 C370 62 250 62 250 130 C250 198 130 198 130 130 Z";
 
 function signInWithDoctor8() {
   void signIn("doctor8", { callbackUrl: "/app" });
@@ -12,56 +21,115 @@ function signInWithDoctor8() {
 export default function HomePage() {
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#050505] text-white">
+      <style>{`
+        @keyframes inf-flow {
+          to { stroke-dashoffset: -1200; }
+        }
+        @keyframes inf-flow-rev {
+          to { stroke-dashoffset: 1200; }
+        }
+        @keyframes inf-breathe {
+          0%, 100% { opacity: 0.55; }
+          50% { opacity: 1; }
+        }
+      `}</style>
+
       {/* Gradiente de fundo */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(120,120,140,0.25),transparent_60%),radial-gradient(ellipse_60%_50%_at_80%_110%,rgba(60,60,80,0.35),transparent_60%),linear-gradient(180deg,#0a0a0c_0%,#050505_45%,#0c0c10_100%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(120,120,150,0.28),transparent_60%),radial-gradient(ellipse_60%_50%_at_85%_110%,rgba(70,70,110,0.35),transparent_60%),radial-gradient(ellipse_50%_40%_at_10%_100%,rgba(50,60,90,0.25),transparent_60%),linear-gradient(180deg,#0a0a0e_0%,#050505_45%,#0b0b12_100%)]"
       />
 
       {/* Grid sutil */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,black,transparent)]"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_75%_65%_at_50%_45%,black,transparent)]"
       />
 
-      {/* Símbolo do infinito */}
+      {/* Símbolo do infinito — tela inteira */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 flex items-center justify-center"
       >
         <svg
           viewBox="0 0 500 260"
-          className="w-[min(90vw,900px)] opacity-70"
-          fill="none"
+          preserveAspectRatio="xMidYMid slice"
+          className="h-full w-full scale-110"
         >
           <defs>
             <linearGradient id="inf-grad" x1="0" y1="0" x2="500" y2="260" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
-              <stop offset="35%" stopColor="#9ca3af" stopOpacity="0.5" />
-              <stop offset="70%" stopColor="#52525b" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.8" />
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+              <stop offset="30%" stopColor="#a5b4fc" stopOpacity="0.55" />
+              <stop offset="55%" stopColor="#71717a" stopOpacity="0.35" />
+              <stop offset="80%" stopColor="#93c5fd" stopOpacity="0.5" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.9" />
             </linearGradient>
-            <filter id="inf-glow" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="10" result="blur" />
+            <linearGradient id="inf-grad-2" x1="500" y1="260" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.7" />
+              <stop offset="50%" stopColor="#818cf8" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.6" />
+            </linearGradient>
+            <filter id="inf-glow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="8" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+            <filter id="inf-glow-wide" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="22" />
+            </filter>
           </defs>
+
+          {/* Halo difuso ao fundo */}
           <path
-            d="M130 130 C130 62 250 62 250 130 C250 198 370 198 370 130 C370 62 250 62 250 130 C250 198 130 198 130 130 Z"
+            d={INFINITY_PATH}
+            stroke="url(#inf-grad)"
+            strokeWidth="14"
+            fill="none"
+            filter="url(#inf-glow-wide)"
+            opacity="0.35"
+          />
+
+          {/* Traço principal com glow e respiração */}
+          <path
+            d={INFINITY_PATH}
             stroke="url(#inf-grad)"
             strokeWidth="2.5"
+            fill="none"
             filter="url(#inf-glow)"
             strokeLinecap="round"
-            className="animate-pulse [animation-duration:5s]"
+            style={{ animation: "inf-breathe 6s ease-in-out infinite" }}
+          />
+
+          {/* Fluxo de energia — tracejado animado */}
+          <path
+            d={INFINITY_PATH}
+            stroke="url(#inf-grad)"
+            strokeWidth="3.5"
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray="40 560"
+            style={{ animation: "inf-flow 7s linear infinite" }}
+            filter="url(#inf-glow)"
           />
           <path
-            d="M130 130 C130 62 250 62 250 130 C250 198 370 198 370 130 C370 62 250 62 250 130 C250 198 130 198 130 130 Z"
-            stroke="url(#inf-grad)"
-            strokeWidth="1"
-            strokeOpacity="0.6"
+            d={INFINITY_PATH}
+            stroke="url(#inf-grad-2)"
+            strokeWidth="2"
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray="18 582"
+            style={{ animation: "inf-flow-rev 9s linear infinite" }}
+          />
+
+          {/* Contorno fino estático */}
+          <path
+            d={INFINITY_PATH}
+            stroke="url(#inf-grad-2)"
+            strokeWidth="0.75"
+            fill="none"
+            strokeOpacity="0.5"
           />
         </svg>
       </div>
@@ -70,10 +138,12 @@ export default function HomePage() {
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-16">
         <div className="mb-12 text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium tracking-widest text-zinc-400 uppercase backdrop-blur">
-            Vital8 · Ecossistema Doctor8
+            Vital8Erp · Gestão completa para quem cuida de vidas
           </div>
-          <h1 className="bg-gradient-to-b from-white via-zinc-200 to-zinc-500 bg-clip-text text-4xl font-semibold tracking-tight text-transparent sm:text-6xl">
-            Vital8
+          <h1
+            className={`${spaceGrotesk.className} bg-gradient-to-b from-white via-zinc-100 to-zinc-500 bg-clip-text text-5xl font-bold tracking-tight text-transparent sm:text-7xl`}
+          >
+            Vital8Erp
           </h1>
           <p className="mx-auto mt-4 max-w-md text-sm text-zinc-400 sm:text-base">
             Escolha o tipo de conta para entrar com seu login Doctor8.
@@ -116,7 +186,7 @@ export default function HomePage() {
       </main>
 
       <footer className="relative z-10 pb-8 text-center text-xs text-zinc-600">
-        © {new Date().getFullYear()} Vital8 — Gestão completa para quem cuida de vidas
+        © {new Date().getFullYear()} Vital8Erp — Gestão completa para quem cuida de vidas
       </footer>
     </div>
   );
