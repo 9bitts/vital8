@@ -6,6 +6,7 @@ import {
   AuthError,
   getRequestMeta,
   requireAuth,
+  requireValidBranch,
   type ActionResult,
 } from "@/lib/auth/guards";
 import { createAuditLog } from "@/modules/core/services/audit.service";
@@ -146,6 +147,9 @@ export async function createAppointmentAction(
 
     const parsed = appointmentCreateSchema.parse(input);
 
+    const branchId = parsed.branchId ?? ctx.branchId ?? null;
+    if (branchId) await requireValidBranch(ctx, branchId);
+
     if (parsed.isSqueeze && !canAllowSqueeze(ctx.role)) {
       throw new AuthError("Encaixe requer permissão de administrador", "FORBIDDEN");
     }
@@ -154,7 +158,7 @@ export async function createAppointmentAction(
       ctx.db,
       ctx.organizationId,
       ctx.userId,
-      parsed,
+      { ...parsed, branchId },
     );
 
     await auditAppointment("appointment.create", ctx, appointment.id, {

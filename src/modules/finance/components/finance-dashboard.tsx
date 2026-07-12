@@ -38,6 +38,7 @@ export function FinanceDashboard() {
         <Link href="/app/financeiro/repasse"><Button variant="outline" size="sm">Repasse</Button></Link>
         <Link href="/app/financeiro/pacotes"><Button variant="outline" size="sm">Pacotes</Button></Link>
         <Link href="/app/financeiro/relatorios"><Button variant="outline" size="sm">Relatórios</Button></Link>
+        <Link href="/app/financeiro/fiscal"><Button variant="outline" size="sm">Fiscal</Button></Link>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

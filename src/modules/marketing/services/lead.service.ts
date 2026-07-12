@@ -63,6 +63,7 @@ export async function listLeads(
   db: TenantClient,
   organizationId: string,
   filters?: {
+    branchId?: string | null;
     status?: LeadStatus;
     leadSourceId?: string;
     marketingCampaignId?: string;
@@ -74,6 +75,7 @@ export async function listLeads(
   return db.lead.findMany({
     where: {
       organizationId,
+      ...(filters?.branchId ? { branchId: filters.branchId } : {}),
       ...(filters?.status ? { status: filters.status } : {}),
       ...(filters?.leadSourceId ? { leadSourceId: filters.leadSourceId } : {}),
       ...(filters?.marketingCampaignId

@@ -86,6 +86,8 @@ const TENANT_SCOPED_MODELS = new Set([
   "OnlineBookingConfig",
   "TeleconsultConsent",
   "TeleconsultRoom",
+  "DailyRecordingLog",
+  "TeleconsultVideoIncident",
   "NpsSurvey",
   "NpsResponse",
   "ReleasedDocument",
@@ -118,7 +120,16 @@ const TENANT_SCOPED_MODELS = new Set([
   "ReferralProgram",
   "Referral",
   "Testimonial",
-  "LeadOptOut",
+  "PrescriptionSettings",
+  "PrescriptionControlSequence",
+  "MessagingSettings",
+  "PaymentSettings",
+  "PatientPaymentLink",
+  "ConversationThread",
+  "ScribeSession",
+  "WhatsAppDeliveryLog",
+  "LacunaSignatureSession",
+  "ProfessionalCalendarLink",
 ]);
 
 const MODELS_WITH_SOFT_DELETE = new Set([
@@ -262,3 +273,7 @@ export type TenantClient = ReturnType<typeof createTenantClient>;
 
 /** Tipo utilitário para extrair delegate de um model do tenant client. */
 export type TenantModel<T extends keyof TenantClient> = TenantClient[T];
+
+export function isTenantScopedModel(model: string): boolean {
+  return TENANT_SCOPED_MODELS.has(model);
+}

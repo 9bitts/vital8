@@ -1,13 +1,26 @@
+import type { PrescriptionProviderType } from "@/generated/prisma/client";
 import { LocalDrugCatalogAdapter } from "./local.adapter";
+import { MemedPrescriptionAdapter } from "./memed.adapter";
 import type { PrescriptionProviderAdapter } from "./types";
 
-let adapter: PrescriptionProviderAdapter | null = null;
+let localAdapter: PrescriptionProviderAdapter | null = null;
+let memedAdapter: PrescriptionProviderAdapter | null = null;
 
-export function getPrescriptionProvider(): PrescriptionProviderAdapter {
-  if (!adapter) {
-    adapter = new LocalDrugCatalogAdapter();
+export function getPrescriptionProvider(
+  provider: PrescriptionProviderType = "LOCAL",
+): PrescriptionProviderAdapter {
+  if (provider === "MEMED") {
+    if (!memedAdapter) memedAdapter = new MemedPrescriptionAdapter();
+    return memedAdapter;
   }
-  return adapter;
+  if (!localAdapter) localAdapter = new LocalDrugCatalogAdapter();
+  return localAdapter;
 }
 
-export type { PrescriptionProviderAdapter, DrugSearchResult } from "./types";
+export type {
+  PrescriptionProviderAdapter,
+  DrugSearchResult,
+  MemedSessionInput,
+  MemedSessionResult,
+  MemedWebhookResult,
+} from "./types";

@@ -10,6 +10,7 @@ import { formatBRL } from "@/lib/money";
 import {
   closeBatchAction,
   createBatchAction,
+  downloadBatchAccountingCsvAction,
   downloadBatchXmlAction,
   listBatchesAction,
   listGuidesAction,
@@ -255,6 +256,24 @@ export function BillingDashboard({
                     }
                   >
                     Baixar XML
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      startTransition(async () => {
+                        const { csv, filename } = await downloadBatchAccountingCsvAction(b.id);
+                        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = filename;
+                        a.click();
+                        setMessage("CSV contábil baixado");
+                      })
+                    }
+                  >
+                    CSV contábil
                   </Button>
                   <Button
                     size="sm"

@@ -26,9 +26,14 @@ import {
   signEncounterAction,
   updateSectionAction,
 } from "@/modules/emr/actions/emr.actions";
+import {
+  previewPrescriptionSafetyAction,
+  sendPrescriptionToPatientAction,
+} from "@/modules/emr/actions/prescription.actions";
 import { OdontogramEditor } from "./odontogram-editor";
 import { BodyChartEditor } from "./body-chart-editor";
 import { ClinicalCopilotPanel } from "@/modules/ai/components/clinical-copilot-panel";
+import { TeleconsultPanel } from "@/modules/engagement/components/teleconsult-panel";
 
 type EncounterData = Awaited<ReturnType<typeof getEncounterAction>>;
 
@@ -53,8 +58,17 @@ export function EncounterWorkspace({ encounterId }: Props) {
     Awaited<ReturnType<typeof searchDrugsAction>>
   >([]);
   const [rxItems, setRxItems] = useState<
-    { drugName: string; dosage: string; route: string }[]
+    {
+      drugCatalogId?: string | null;
+      drugName: string;
+      dosage: string;
+      route: string;
+    }[]
   >([{ drugName: "", dosage: "", route: "" }]);
+  const [rxType, setRxType] = useState<"COMUM" | "CONTROLE_ESPECIAL">("COMUM");
+  const [safetyAlerts, setSafetyAlerts] = useState<
+    Awaited<ReturnType<typeof previewPrescriptionSafetyAction>>["alerts"]
+  >([]);
   const [history, setHistory] = useState<
     Awaited<ReturnType<typeof getPatientEmrHistoryAction>> | null
   >(null);
@@ -109,6 +123,44 @@ export function EncounterWorkspace({ encounterId }: Props) {
     return () => clearTimeout(t);
   }, [drugQuery]);
 
+  async function submitPrescription(confirmOverride = false) {
+    const items = rxItems.filter((i) => i.drugName && i.dosage);
+    if (items.length === 0) {
+      setError("Informe ao menos um medicamento com posologia");
+      return;
+    }
+
+    const r = await createPrescriptionAction({
+      encounterId,
+      type: rxType,
+      items,
+      confirmSafetyOverride: confirmOverride,
+    });
+
+    if (!r.success) {
+      const payload = r as {
+        error: string;
+        alerts?: typeof safetyAlerts;
+      };
+      if (payload.alerts?.length) {
+        setSafetyAlerts(payload.alerts);
+      }
+      setError(r.error);
+      return;
+    }
+
+    setSafetyAlerts([]);
+    setRxItems([{ drugName: "", dosage: "", route: "" }]);
+    if (r.data?.redirectUrl) {
+      window.location.href = r.data.redirectUrl;
+      return;
+    }
+    if (r.data?.warnings?.length) {
+      setError(`Prescrição salva com alertas: ${r.data.warnings.join("; ")}`);
+    }
+    load();
+  }
+
   if (!data) {
     return <p className="text-sm text-zinc-500">Carregando atendimento…</p>;
   }
@@ -130,6 +182,20 @@ export function EncounterWorkspace({ encounterId }: Props) {
   const isSigned = encounter.status === "ASSINADO";
   const allergies = encounter.patient.allergies ?? [];
   const conditions = encounter.patient.chronicConditions ?? [];
+  const soapSection = sections.find((s) => s.sectionType === "EVOLUCAO_SOAP");
+  const anamnesisSection = sections.find((s) => s.sectionType === "ANAMNESE");
+  const soapData = (soapSection?.structuredData ?? {}) as Record<string, string>;
+
+  function applySoapField(field: string, value: string) {
+    if (!soapSection) {
+      setError("Seção SOAP não encontrada no atendimento");
+      return;
+    }
+    saveSection(soapSection.id, undefined, {
+      ...soapData,
+      [field]: value,
+    });
+  }
 
   function saveSection(
     sectionId: string,
@@ -161,6 +227,10 @@ export function EncounterWorkspace({ encounterId }: Props) {
         setError(r.error);
         return;
       }
+      if (r.data?.redirectUrl) {
+        window.location.href = r.data.redirectUrl;
+        return;
+      }
       load();
       router.refresh();
     });
@@ -177,7 +247,19 @@ export function EncounterWorkspace({ encounterId }: Props) {
         </div>
       )}
 
-      <ClinicalCopilotPanel patientId={encounter.patientId} />
+      <ClinicalCopilotPanel
+        patientId={encounter.patientId}
+        encounterId={encounterId}
+        anamnesisText={anamnesisSection?.content ?? ""}
+        disabled={isSigned}
+        onApplySoapField={soapSection ? applySoapField : undefined}
+      />
+
+      <TeleconsultPanel
+        encounterId={encounterId}
+        modality={encounter.modality}
+        disabled={isSigned}
+      />
 
       <div className="flex items-center justify-between">
         <div>
@@ -190,6 +272,22 @@ export function EncounterWorkspace({ encounterId }: Props) {
             {encounter.contentHash && (
               <span className="ml-2 font-mono text-xs">
                 hash: {encounter.contentHash.slice(0, 12)}…
+                {typeof encounter.signatureMeta === "object" &&
+                  encounter.signatureMeta !== null &&
+                  "verificationCode" in encounter.signatureMeta && (
+                    <>
+                      {" "}
+                      ·{" "}
+                      <a
+                        href={`/verificar/${String((encounter.signatureMeta as Record<string, string>).verificationCode)}`}
+                        className="underline"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        verificar
+                      </a>
+                    </>
+                  )}
               </span>
             )}
           </p>
@@ -465,6 +563,24 @@ export function EncounterWorkspace({ encounterId }: Props) {
           {!isSigned && (
             <div className="rounded border p-3 space-y-2">
               <h3 className="font-medium">Prescrição</h3>
+              <div className="flex gap-2 text-sm">
+                <label className="flex items-center gap-1">
+                  <input
+                    type="radio"
+                    checked={rxType === "COMUM"}
+                    onChange={() => setRxType("COMUM")}
+                  />
+                  Receita comum
+                </label>
+                <label className="flex items-center gap-1">
+                  <input
+                    type="radio"
+                    checked={rxType === "CONTROLE_ESPECIAL"}
+                    onChange={() => setRxType("CONTROLE_ESPECIAL")}
+                  />
+                  Controle especial (Port. 344)
+                </label>
+              </div>
               <Input
                 placeholder="Buscar medicamento..."
                 value={drugQuery}
@@ -479,13 +595,19 @@ export function EncounterWorkspace({ encounterId }: Props) {
                       onClick={() => {
                         setRxItems((prev) => [
                           ...prev,
-                          { drugName: d.name, dosage: "", route: d.route ?? "" },
+                          {
+                            drugCatalogId: d.id,
+                            drugName: d.name,
+                            dosage: "",
+                            route: d.route ?? "",
+                          },
                         ]);
                         setDrugQuery("");
                         setDrugs([]);
                       }}
                     >
                       {d.name}
+                      {d.isControlled ? " (controlado)" : ""}
                     </li>
                   ))}
                 </ul>
@@ -512,22 +634,68 @@ export function EncounterWorkspace({ encounterId }: Props) {
                   />
                 </div>
               ))}
-              <Button
-                size="sm"
-                disabled={pending}
-                onClick={() =>
-                  startTransition(async () => {
-                    const r = await createPrescriptionAction({
-                      encounterId,
-                      items: rxItems.filter((i) => i.drugName && i.dosage),
-                    });
-                    if (!r.success) setError(r.error);
-                    else load();
-                  })
-                }
-              >
-                Salvar prescrição
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() =>
+                    startTransition(async () => {
+                      const items = rxItems.filter((i) => i.drugName && i.dosage);
+                      if (items.length === 0) return;
+                      const result = await previewPrescriptionSafetyAction({
+                        patientId: encounter.patientId,
+                        items,
+                      });
+                      setSafetyAlerts(result.alerts);
+                    })
+                  }
+                >
+                  Verificar segurança
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={pending}
+                  onClick={() => startTransition(() => submitPrescription(false))}
+                >
+                  Salvar prescrição
+                </Button>
+                {safetyAlerts.some((a) => a.severity === "BLOCKING") && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={pending}
+                    onClick={() => {
+                      if (
+                        !confirm(
+                          "Há alertas bloqueantes. Confirma prescrição mesmo assim?",
+                        )
+                      ) {
+                        return;
+                      }
+                      startTransition(() => submitPrescription(true));
+                    }}
+                  >
+                    Prescrever com override
+                  </Button>
+                )}
+              </div>
+              {safetyAlerts.length > 0 && (
+                <ul className="text-sm space-y-1">
+                  {safetyAlerts.map((a, idx) => (
+                    <li
+                      key={idx}
+                      className={
+                        a.severity === "BLOCKING"
+                          ? "text-red-700"
+                          : "text-amber-700"
+                      }
+                    >
+                      [{a.type}] {a.message} ({a.drugName})
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
 
@@ -535,33 +703,55 @@ export function EncounterWorkspace({ encounterId }: Props) {
             <div className="rounded border p-3">
               <h3 className="font-medium mb-2">Receitas deste atendimento</h3>
               {encounter.prescriptions.map((rx) => (
-                <Button
-                  key={rx.id}
-                  size="sm"
-                  variant="outline"
-                  className="mr-2"
-                  onClick={() =>
-                    startTransition(async () => {
-                      const r = await getPrescriptionPdfAction(rx.id);
-                      if (!r.success) {
-                        setError("error" in r ? r.error : "Erro PDF");
-                        return;
+                <div key={rx.id} className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+                  <span>
+                    {rx.type === "CONTROLE_ESPECIAL" ? "Controle especial" : "Comum"}
+                    {rx.validationCode ? ` · CFM ${rx.validationCode}` : ""}
+                    {rx.sentToPatientAt
+                      ? ` · Enviada ${rx.sentToPatientAt.toLocaleString("pt-BR")}`
+                      : ""}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      startTransition(async () => {
+                        const r = await getPrescriptionPdfAction(rx.id);
+                        if (!r.success) {
+                          setError("error" in r ? r.error : "Erro PDF");
+                          return;
+                        }
+                        const bytes = Uint8Array.from(atob(r.data!), (c) =>
+                          c.charCodeAt(0),
+                        );
+                        const blob = new Blob([bytes], { type: "application/pdf" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `receita-${rx.id}.pdf`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      })
+                    }
+                  >
+                    PDF receita
+                  </Button>
+                  {!rx.sentToPatientAt && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        startTransition(async () => {
+                          const r = await sendPrescriptionToPatientAction(rx.id);
+                          if (!r.success) setError(r.error);
+                          else load();
+                        })
                       }
-                      const bytes = Uint8Array.from(atob(r.data!), (c) =>
-                        c.charCodeAt(0),
-                      );
-                      const blob = new Blob([bytes], { type: "application/pdf" });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `receita-${rx.id}.pdf`;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                    })
-                  }
-                >
-                  PDF receita
-                </Button>
+                    >
+                      Enviar ao paciente
+                    </Button>
+                  )}
+                </div>
               ))}
             </div>
           )}

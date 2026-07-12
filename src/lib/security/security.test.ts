@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createHmac } from "crypto";
 import { assertSafeOutboundUrl, isSafeOutboundUrl } from "./url-validation";
 import { checkLoginRateLimit } from "./login-rate-limit";
 import { assertCronAuthorized } from "./cron-auth";
 import { resetAllRateLimitsForTests } from "@/modules/engagement/lib/rate-limit";
 import { ConsoleMessagingAdapter } from "@/lib/integrations/messaging/console.adapter";
+import { verifyHmacSignature } from "@/modules/api/middleware/authenticate";
 
 describe("SSRF — URL de webhook", () => {
   it("bloqueia localhost e IP privado", () => {
@@ -74,5 +76,18 @@ describe("notificações — markRead exige organizationId", () => {
   it("assinatura inclui organizationId", async () => {
     const { markRead } = await import("@/modules/analytics/services/notification.service");
     expect(markRead.length).toBe(3);
+  });
+});
+
+describe("HMAC API — produção", () => {
+  it("verifyHmacSignature rejeita header ausente", () => {
+    expect(verifyHmacSignature("secret", "{}", null)).toBe(false);
+  });
+
+  it("verifyHmacSignature aceita assinatura válida", () => {
+    const body = '{"a":1}';
+    const ts = "1700000000";
+    const sig = createHmac("sha256", "secret").update(`${ts}.${body}`).digest("hex");
+    expect(verifyHmacSignature("secret", body, `t=${ts},v1=${sig}`)).toBe(true);
   });
 });

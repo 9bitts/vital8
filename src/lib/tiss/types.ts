@@ -50,3 +50,20 @@ export type TissBatchGuideRef = {
   guideNumber: number;
   totalValueCents: number;
 };
+
+export type BatchXmlInput = {
+  tissVersion: string;
+  ansRegistration: string;
+  providerDocument: string;
+  providerCodeAtInsurer?: string | null;
+  providerCnes?: string | null;
+  organizationName?: string | null;
+  batchNumber: number;
+  competence: string;
+  guides: Array<{ guideType: string; payload: TissGuidePayload }>;
+};
+
+export type BatchXmlResult = {
+  xml: string;
+  hash: string;
+};

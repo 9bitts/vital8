@@ -37,6 +37,7 @@ export async function sendOverdueReminders(
       to: phone,
       channel: "SMS",
       body: `${orgName}: pendência de ${formatBRL(recv.totalCents - recv.paidCents)} vencida em ${new Date(recv.dueDate).toLocaleDateString("pt-BR")}.`,
+      organizationId,
     });
 
     await db.receivable.update({

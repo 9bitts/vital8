@@ -8,6 +8,15 @@ export default async function RelacionamentoPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Central de comunicação</h1>
+      <p className="text-sm">
+        <a href="/app/relacionamento/conversas" className="text-blue-700 underline">
+          Central de conversas WhatsApp
+        </a>
+        {" · "}
+        <a href="/app/relacionamento/reguas" className="text-blue-700 underline">
+          Réguas
+        </a>
+      </p>
       <CommunicationDashboard logs={logs} />
     </div>
   );

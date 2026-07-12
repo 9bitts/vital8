@@ -12,7 +12,9 @@ Authorization: Bearer {keyPrefix}.{secret}
 - Secret exibido **uma única vez** na criação da key
 - Keys SANDBOX operam apenas na organização demo (`clinica-vida-plena`)
 
-### Assinatura HMAC (opcional, recomendada em escritas)
+### Assinatura HMAC (obrigatória em produção para escritas)
+
+Em `NODE_ENV=production`, todo POST/PUT/PATCH/DELETE exige o header. Em desenvolvimento, opcional.
 
 ```http
 X-Vital8-Signature: t={unix_ts},v1={hmac_sha256_hex}

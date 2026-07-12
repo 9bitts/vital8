@@ -26,6 +26,7 @@ export type CreateAppointmentInput = {
   professionalId: string;
   serviceId: string;
   roomId?: string | null;
+  branchId?: string | null;
   startsAt: Date;
   origin?: AppointmentOrigin;
   isPrivate?: boolean;
@@ -171,6 +172,7 @@ export async function sendAppointmentConfirmation(
     channel,
     to: phone || "sem-telefone@vital8.local",
     body,
+    organizationId,
     metadata: { appointmentId, token },
   });
 
@@ -196,6 +198,7 @@ export async function createAppointment(
   const appointment = await db.appointment.create({
     data: {
       organizationId,
+      branchId: input.branchId ?? null,
       patientId: input.patientId,
       professionalId: input.professionalId,
       serviceId: input.serviceId,
@@ -358,6 +361,16 @@ export async function transitionAppointmentStatus(
       ? { cancelReason: options.cancelReason }
       : undefined,
   );
+
+  if (
+    toStatus === "CONFIRMADO" ||
+    toStatus === "CANCELADO" ||
+    toStatus === "REMARCADO"
+  ) {
+    void import("@/lib/integrations/calendar/sync.service").then((m) =>
+      m.syncAppointmentToGoogleCalendar(appointmentId).catch(() => undefined),
+    );
+  }
 
   return updated;
 }

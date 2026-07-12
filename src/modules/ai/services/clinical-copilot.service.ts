@@ -89,6 +89,15 @@ export async function suggestCid10Codes(
   return { suggestions, logId, tokensUsed };
 }
 
+export async function suggestCidFromAnamnesis(
+  organizationId: string,
+  userId: string,
+  anamnesisText: string,
+  db: TenantClient,
+) {
+  return suggestCid10Codes(organizationId, userId, anamnesisText, db);
+}
+
 export async function draftClinicalDocument(
   organizationId: string,
   userId: string,

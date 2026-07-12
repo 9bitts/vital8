@@ -117,6 +117,7 @@ export async function listPatientsAction(
     const result = await searchPatients(ctx.db, {
       ...parsed.data,
       organizationId: ctx.organizationId,
+      branchId: ctx.branchId,
     });
     return {
       success: true,

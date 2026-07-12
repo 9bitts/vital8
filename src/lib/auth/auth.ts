@@ -11,6 +11,9 @@ import { adminPrisma } from "@/lib/db/admin-client";
 import { verifyPassword } from "@/lib/auth/password";
 import { loginSchema } from "@/modules/core/schemas/auth.schema";
 import { createAuditLog } from "@/modules/core/services/audit.service";
+import {
+  getSessionVersions,
+} from "@/lib/auth/session-version.service";
 
 async function resolveActiveMembership(userId: string, organizationId?: string) {
   const memberships = await adminPrisma.membership.findMany({
@@ -126,6 +129,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           organizationId: membership.organizationId,
           role: membership.role,
+          userSessionVersion: user.sessionVersion,
+          membershipSessionVersion: membership.sessionVersion,
         };
       },
     }),
@@ -238,12 +243,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.organizationId = membership.organizationId;
         token.role = membership.role;
         token.branchId = null;
+        token.userSessionVersion = vital8User.sessionVersion;
+        token.membershipSessionVersion = membership.sessionVersion;
       } else if (user) {
         token.id = user.id;
         token.name = user.name;
         token.organizationId = user.organizationId;
         token.role = user.role;
         token.branchId = user.branchId ?? null;
+        if (user.userSessionVersion !== undefined) {
+          token.userSessionVersion = user.userSessionVersion;
+        }
+        if (user.membershipSessionVersion !== undefined) {
+          token.membershipSessionVersion = user.membershipSessionVersion;
+        }
       }
 
       if (trigger === "update" && session) {
@@ -259,6 +272,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
         if (updateSession.branchId !== undefined) {
           token.branchId = updateSession.branchId;
+        }
+      }
+
+      if (token.id && token.organizationId && !token.error) {
+        const versions = await getSessionVersions(
+          token.id as string,
+          token.organizationId as string,
+        );
+        if (!versions) {
+          token.error = "SessionRevoked";
+        } else if (
+          versions.userSessionVersion !== token.userSessionVersion ||
+          versions.membershipSessionVersion !== token.membershipSessionVersion
+        ) {
+          token.error = "SessionRevoked";
+        } else {
+          token.role = versions.role;
         }
       }
 

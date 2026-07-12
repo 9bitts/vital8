@@ -41,6 +41,18 @@ export async function ensureMainBranch(organizationId: string) {
   });
 }
 
+export async function assertBranchBelongsToOrg(
+  organizationId: string,
+  branchId: string,
+): Promise<void> {
+  const branch = await adminPrisma.branch.findFirst({
+    where: { id: branchId, organizationId, isActive: true },
+  });
+  if (!branch) {
+    throw new Error("Unidade inválida ou não pertence à organização");
+  }
+}
+
 export function branchFilter(branchId: string | null | undefined) {
   if (!branchId) return {};
   return { branchId };

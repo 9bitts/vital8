@@ -179,6 +179,16 @@ enum PrescriptionType {
   CONTROLE_ESPECIAL
 }
 
+enum PrescriptionProviderType {
+  LOCAL
+  MEMED
+}
+
+enum DrugInteractionSeverity {
+  WARNING
+  BLOCKING
+}
+
 enum MedicalCertificateType {
   ATESTADO
   DECLARACAO
@@ -346,6 +356,52 @@ enum FinancialCategoryType {
   DESPESA
 }
 
+enum TaxRegime {
+  SIMPLES_NACIONAL
+  LUCRO_PRESUMIDO
+  LUCRO_REAL
+  MEI
+}
+
+enum NfseProvider {
+  MOCK
+  NFSE_NACIONAL
+}
+
+enum FiscalDocumentType {
+  NFSE
+  RECIBO_RECEITA_SAUDE
+}
+
+enum FiscalDocumentStatus {
+  PENDING
+  PROCESSING
+  ISSUED
+  FAILED
+  CANCELLED
+  REPLACED
+}
+
+enum FiscalEmitProfile {
+  AUTO
+  NFSE_ONLY
+  RECEITA_SAUDE_ONLY
+}
+
+enum SignatureProvider {
+  DEV_SIMPLE
+  ICP_A1
+  ICP_DSAS
+  ICP_LACUNA
+}
+
+enum SignedEntityType {
+  ENCOUNTER
+  PRESCRIPTION
+  MEDICAL_CERTIFICATE
+  EXAM_RESULT
+}
+
 enum PackagePurchaseStatus {
   ATIVO
   ESGOTADO
@@ -428,6 +484,9 @@ model Organization {
   onlineBookingConfig OnlineBookingConfig?
   teleconsultConsents TeleconsultConsent[]
   teleconsultRooms TeleconsultRoom[]
+  dailyRecordingLogs DailyRecordingLog[]
+  teleconsultVideoIncidents TeleconsultVideoIncident[]
+  professionalCalendarLinks ProfessionalCalendarLink[]
   npsSurveys NpsSurvey[]
   npsResponses NpsResponse[]
   releasedDocuments ReleasedDocument[]
@@ -468,6 +527,19 @@ model Organization {
   referrals           Referral[]
   testimonials        Testimonial[]
   leadOptOuts         LeadOptOut[]
+  fiscalSettings      FiscalSettings?
+  fiscalDocuments     FiscalDocument[]
+  signatureSettings   SignatureSettings?
+  signedClinicalDocuments SignedClinicalDocument[]
+  prescriptionSettings    PrescriptionSettings?
+  prescriptionControlSequences PrescriptionControlSequence[]
+  messagingSettings       MessagingSettings?
+  paymentSettings         PaymentSettings?
+  patientPaymentLinks     PatientPaymentLink[]
+  conversationThreads     ConversationThread[]
+  scribeSessions          ScribeSession[]
+  whatsAppDeliveryLogs    WhatsAppDeliveryLog[]
+  lacunaSignatureSessions LacunaSignatureSession[]
 
   @@index([deletedAt])
 }
@@ -545,6 +617,9 @@ model Patient {
   testimonials    Testimonial[]
   acquisitionSource LeadSource? @relation(fields: [leadSourceId], references: [id])
   acquisitionCampaign MarketingCampaign? @relation(fields: [marketingCampaignId], references: [id])
+  fiscalDocuments FiscalDocument[]
+  paymentLinks    PatientPaymentLink[]
+  conversationThreads ConversationThread[]
 
   @@unique([organizationId, cpfHash])
   @@index([organizationId, searchName])
@@ -726,9 +801,30 @@ model Professional {
   commissionStatements CommissionStatement[]
   dailyMetrics       DailyProfessionalMetrics[]
   performanceGoals   PerformanceGoal[]
+  fiscalDocuments    FiscalDocument[]
+  calendarLink       ProfessionalCalendarLink?
 
   @@index([organizationId])
   @@index([deletedAt])
+}
+
+model ProfessionalCalendarLink {
+  id                    String    @id @default(cuid())
+  organizationId        String
+  professionalId        String    @unique
+  calendarId            String    @default("primary")
+  refreshTokenEncrypted String
+  accessTokenEncrypted  String?
+  tokenExpiresAt        DateTime?
+  syncEnabled           Boolean   @default(true)
+  lastSyncAt            DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  professional Professional @relation(fields: [professionalId], references: [id])
+
+  @@index([organizationId])
 }
 
 model Service {
@@ -872,6 +968,7 @@ model Appointment {
   startedAt           DateTime?
   finishedAt          DateTime?
   queueNumber         Int?
+  googleCalendarEventId String?
   cancelReason        String?
   calledAt            DateTime?
   createdAt           DateTime          @default(now())
@@ -984,8 +1081,28 @@ model DrugCatalog {
   isControlled     Boolean @default(false)
 
   prescriptionItems PrescriptionItem[]
+  interactionsA     DrugInteraction[] @relation("DrugA")
+  interactionsB     DrugInteraction[] @relation("DrugB")
 
   @@index([name])
+  @@index([activeIngredient])
+}
+
+model DrugInteraction {
+  id                  String                  @id @default(cuid())
+  drugCatalogIdA      String?
+  drugCatalogIdB      String?
+  activeIngredientA   String
+  activeIngredientB   String
+  severity            DrugInteractionSeverity @default(WARNING)
+  description         String
+  createdAt           DateTime                @default(now())
+
+  drugA DrugCatalog? @relation("DrugA", fields: [drugCatalogIdA], references: [id])
+  drugB DrugCatalog? @relation("DrugB", fields: [drugCatalogIdB], references: [id])
+
+  @@index([activeIngredientA])
+  @@index([activeIngredientB])
 }
 
 model Encounter {
@@ -1026,13 +1143,48 @@ model Encounter {
   stockMovements StockMovement[]
   teleconsultConsent TeleconsultConsent? @relation(fields: [teleconsultConsentId], references: [id])
   teleconsultRoom TeleconsultRoom?
+  dailyRecordingLogs DailyRecordingLog[]
+  teleconsultVideoIncidents TeleconsultVideoIncident[]
   npsSurvey NpsSurvey?
+  scribeSessions ScribeSession[]
 
   @@index([organizationId])
   @@index([patientId, startedAt])
   @@index([professionalId])
   @@index([status])
   @@index([deletedAt])
+}
+
+enum ScribeSessionStatus {
+  STARTED
+  CONSENTED
+  TRANSCRIBED
+  SOAP_READY
+  APPLIED
+  DISCARDED
+}
+
+model ScribeSession {
+  id                    String              @id @default(cuid())
+  organizationId        String
+  encounterId           String
+  patientId             String
+  userId                String
+  consentRecordedAt     DateTime?
+  transcriptEncrypted   String?
+  soapDraft             Json?
+  transcribeLogId       String?
+  soapLogId             String?
+  status                ScribeSessionStatus @default(STARTED)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  encounter    Encounter    @relation(fields: [encounterId], references: [id])
+
+  @@index([organizationId])
+  @@index([encounterId])
+  @@index([patientId])
 }
 
 model EncounterSection {
@@ -1123,8 +1275,14 @@ model Prescription {
   professionalId String
   authorUserId   String
   type           PrescriptionType @default(COMUM)
+  provider       PrescriptionProviderType @default(LOCAL)
   notesEncrypted String?
   signedAt       DateTime?
+  validationCode String?          @unique
+  validationUrl  String?
+  controlBookNumber String?
+  memedExternalId String?
+  sentToPatientAt DateTime?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   deletedAt      DateTime?
@@ -1137,6 +1295,7 @@ model Prescription {
   @@index([organizationId])
   @@index([encounterId])
   @@index([patientId])
+  @@index([validationCode])
   @@index([deletedAt])
 }
 
@@ -1404,6 +1563,7 @@ model Sale {
   payments     Payment[]
   packagePurchase PackagePurchase?
   stockMovements StockMovement[]
+  fiscalDocuments FiscalDocument[]
 
   @@index([organizationId])
   @@index([patientId])
@@ -1516,6 +1676,7 @@ model Receivable {
   healthInsurer HealthInsurer? @relation(fields: [healthInsurerId], references: [id])
   tissBatch    TissBatch?   @relation(fields: [tissBatchId], references: [id])
   payments     Payment[]
+  paymentLinks PatientPaymentLink[]
 
   @@index([organizationId])
   @@index([patientId])
@@ -1551,6 +1712,7 @@ model Payment {
   cashRegister  CashRegister?  @relation(fields: [cashRegisterId], references: [id])
   cashEntries   CashRegisterEntry[]
   refunds       Refund[]
+  fiscalDocuments FiscalDocument[]
 
   @@index([organizationId])
   @@index([patientId])
@@ -1588,6 +1750,8 @@ model FinancialCategory {
   type           FinancialCategoryType
   parentId       String?
   isActive       Boolean               @default(true)
+  cbsApplicable  Boolean               @default(false)
+  ibsApplicable  Boolean               @default(false)
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
 
@@ -1613,6 +1777,326 @@ model BankAccount {
   organization Organization @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
+}
+
+model FiscalSettings {
+  id                         String            @id @default(cuid())
+  organizationId             String            @unique
+  taxRegime                  TaxRegime         @default(SIMPLES_NACIONAL)
+  cnae                       String?
+  nacionalServiceCode        String?
+  issRateBasisPoints         Int               @default(500)
+  certificateEncrypted       String?
+  certificatePasswordEncrypted String?
+  nfseProvider               NfseProvider      @default(MOCK)
+  autoEmitOnPayment          Boolean           @default(false)
+  emitProfile                FiscalEmitProfile @default(AUTO)
+  municipioIbgeCode          String?
+  inscricaoMunicipal         String?
+  cbsIbsEnabled              Boolean           @default(false)
+  cbsRateBasisPoints         Int?
+  ibsRateBasisPoints         Int?
+  createdAt                  DateTime          @default(now())
+  updatedAt                  DateTime          @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model FiscalDocument {
+  id                   String               @id @default(cuid())
+  organizationId       String
+  documentType         FiscalDocumentType
+  status               FiscalDocumentStatus @default(PENDING)
+  number               String?
+  accessKey            String?
+  dpsNumber            String?
+  amountCents          Int
+  patientId            String
+  paymentId            String?
+  saleId               String?
+  professionalId       String?
+  patientCpfEncrypted  String?
+  serviceDescription   String?
+  responsePayload      Json?
+  pdfStorageKey        String?
+  errorMessage         String?
+  retryCount           Int                  @default(0)
+  nextRetryAt          DateTime?
+  issuedAt             DateTime?
+  cancelledAt          DateTime?
+  replacesDocumentId   String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  patient          Patient           @relation(fields: [patientId], references: [id])
+  payment          Payment?          @relation(fields: [paymentId], references: [id])
+  sale             Sale?             @relation(fields: [saleId], references: [id])
+  professional     Professional?     @relation(fields: [professionalId], references: [id])
+  replacesDocument FiscalDocument?   @relation("FiscalReplacement", fields: [replacesDocumentId], references: [id])
+  replacedBy       FiscalDocument[]  @relation("FiscalReplacement")
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([patientId])
+  @@index([paymentId])
+  @@index([nextRetryAt])
+  @@index([documentType])
+}
+
+model SignatureSettings {
+  id                           String            @id @default(cuid())
+  organizationId               String            @unique
+  provider                     SignatureProvider @default(DEV_SIMPLE)
+  certificateEncrypted           String?
+  certificatePasswordEncrypted   String?
+  dsasApiUrl                   String?
+  dsasApiKeyEncrypted            String?
+  timestampEnabled             Boolean           @default(false)
+  createdAt                    DateTime          @default(now())
+  updatedAt                    DateTime          @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model SignedClinicalDocument {
+  id               String             @id @default(cuid())
+  organizationId   String
+  entityType       SignedEntityType
+  entityId         String
+  verificationCode String             @unique
+  contentHash      String
+  signatureMethod  SignatureProvider
+  signatureMeta    Json               @default("{}")
+  timestampToken   String?
+  pdfStorageKey    String?
+  signerUserId     String
+  signerName       String
+  signedAt         DateTime
+  createdAt        DateTime           @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, entityType, entityId])
+  @@index([organizationId])
+  @@index([verificationCode])
+  @@index([contentHash])
+}
+
+enum LacunaSessionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+  ERROR
+}
+
+model LacunaSignatureSession {
+  id               String              @id @default(cuid())
+  organizationId   String
+  entityType       SignedEntityType
+  entityId         String
+  lacunaSessionId  String              @unique
+  status           LacunaSessionStatus @default(PENDING)
+  contentHash      String
+  verificationCode String
+  signerUserId     String
+  signerName       String
+  returnPath       String?
+  createdAt        DateTime            @default(now())
+  completedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([entityType, entityId])
+  @@index([status])
+}
+
+model PrescriptionSettings {
+  id                      String                 @id @default(cuid())
+  organizationId          String                 @unique
+  provider                PrescriptionProviderType @default(LOCAL)
+  memedPartnerId          String?
+  memedApiKeyEncrypted    String?
+  blockOnAllergyConflict  Boolean                @default(true)
+  blockOnDrugInteraction  Boolean                @default(false)
+  autoSendToPatient       Boolean                @default(false)
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model PrescriptionControlSequence {
+  id             String @id @default(cuid())
+  organizationId String
+  professionalId String
+  nextNumber     Int    @default(1)
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, professionalId])
+  @@index([organizationId])
+}
+
+enum MessagingProviderType {
+  CONSOLE
+  WHATSAPP_CLOUD
+}
+
+enum EmailProviderType {
+  CONSOLE
+  RESEND
+  SES
+}
+
+enum PaymentProviderType {
+  MOCK
+  EFI_PIX
+}
+
+enum PaymentLinkStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+enum ConversationThreadStatus {
+  OPEN
+  HANDOFF
+  CLOSED
+}
+
+enum ConversationMessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+model MessagingSettings {
+  id                           String               @id @default(cuid())
+  organizationId               String               @unique
+  messagingProvider            MessagingProviderType @default(CONSOLE)
+  whatsappPhoneNumberId        String?
+  whatsappAccessTokenEncrypted String?
+  whatsappBusinessAccountId    String?
+  emailProvider                EmailProviderType    @default(CONSOLE)
+  emailFrom                    String?
+  emailReplyTo                 String?
+  resendApiKeyEncrypted        String?
+  createdAt                    DateTime             @default(now())
+  updatedAt                    DateTime             @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
+model WhatsAppDeliveryLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  messageId      String?
+  phone          String?
+  template       String?
+  status         String
+  detail         String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([messageId])
+  @@index([createdAt])
+}
+
+model PaymentSettings {
+  id                        String              @id @default(cuid())
+  organizationId            String              @unique
+  provider                  PaymentProviderType @default(MOCK)
+  efiClientId               String?
+  efiClientSecretEncrypted  String?
+  efiPixKey                 String?
+  efiSandbox                Boolean             @default(true)
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
+model PatientPaymentLink {
+  id              String            @id @default(cuid())
+  organizationId  String
+  patientId       String?
+  receivableId    String?
+  externalId      String?
+  amountCents     Int
+  description     String
+  pixCopyPaste    String?
+  pixQrCodeBase64 String?
+  status          PaymentLinkStatus @default(PENDING)
+  expiresAt       DateTime?
+  paidAt          DateTime?
+  metadata        Json              @default("{}")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  patient      Patient?     @relation(fields: [patientId], references: [id])
+  receivable   Receivable?  @relation(fields: [receivableId], references: [id])
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([receivableId])
+  @@index([status])
+  @@index([externalId])
+}
+
+model ConversationThread {
+  id               String                   @id @default(cuid())
+  organizationId   String
+  patientId        String?
+  phone            String
+  assignedUserId   String?
+  status           ConversationThreadStatus @default(OPEN)
+  aiConversationId String?
+  lastMessageAt    DateTime                 @default(now())
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  organization Organization          @relation(fields: [organizationId], references: [id])
+  patient      Patient?              @relation(fields: [patientId], references: [id])
+  messages     ConversationMessage[]
+
+  @@unique([organizationId, phone])
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([status])
+  @@index([lastMessageAt])
+}
+
+model ConversationMessage {
+  id                 String                       @id @default(cuid())
+  threadId           String
+  organizationId     String
+  direction          ConversationMessageDirection
+  channel            CommunicationChannel
+  body               String
+  communicationLogId String?
+  externalMessageId  String?
+  sentByUserId       String?
+  createdAt          DateTime                     @default(now())
+
+  thread ConversationThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@index([organizationId])
+  @@index([createdAt])
 }
 
 model Payable {
@@ -2539,6 +3023,8 @@ model OnlineBookingConfig {
   minAdvanceHours        Int      @default(4)
   maxAdvanceDays         Int      @default(60)
   requiresApproval       Boolean  @default(true)
+  requirePrepayment      Boolean  @default(false)
+  prepaymentPercent      Int      @default(100)
   welcomeText            String?
   autoReleaseDocuments   Boolean  @default(true)
   createdAt              DateTime @default(now())
@@ -2585,6 +3071,46 @@ model TeleconsultRoom {
   encounter    Encounter @relation(fields: [encounterId], references: [id])
 
   @@index([organizationId])
+}
+
+model DailyRecordingLog {
+  id             String    @id @default(cuid())
+  organizationId String
+  encounterId    String
+  dailyRoomName  String
+  cloudRecording Boolean   @default(true)
+  recordingId    String?
+  downloadUrl    String?
+  durationSecs   Int?
+  status         String    @default("pending")
+  readyAt        DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  encounter    Encounter @relation(fields: [encounterId], references: [id])
+
+  @@index([organizationId])
+  @@index([encounterId])
+  @@index([dailyRoomName])
+  @@index([createdAt])
+}
+
+model TeleconsultVideoIncident {
+  id               String   @id @default(cuid())
+  organizationId   String
+  encounterId      String
+  patientId        String
+  reportedByUserId String?
+  kind             String
+  notes            String?
+  createdAt        DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  encounter    Encounter @relation(fields: [encounterId], references: [id])
+
+  @@index([organizationId])
+  @@index([encounterId])
+  @@index([patientId, createdAt])
 }
 
 model NpsSurvey {
@@ -2704,6 +3230,7 @@ enum NotificationType {
   LEAD_STALE
   LEAD_TASK
   SYSTEM
+  BI_ANOMALY
 }
 
 enum RndsEnvironment {
@@ -3130,6 +3657,29 @@ model SubscriptionInvoice {
   @@index([status])
 }
 
+model BillingWebhookEvent {
+  id             String   @id @default(cuid())
+  eventId        String   @unique
+  organizationId String?
+  eventType      String
+  processedAt    DateTime @default(now())
+
+  @@index([organizationId])
+}
+
+model ProcessedStripeEvent {
+  id             String   @id @default(cuid())
+  eventId        String   @unique
+  type           String
+  status         String
+  error          String?
+  organizationId String?
+  processedAt    DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([processedAt])
+}
+
 model OnboardingProgress {
   id             String    @id @default(cuid())
   organizationId String    @unique
@@ -3339,6 +3889,7 @@ model AiSettings {
   silenceEndHour      Int?
   monthlyTokenLimit   Int      @default(500000)
   monthlyAlertSentAt  DateTime?
+  discardAudioAfterTranscription Boolean @default(true)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -3708,16 +4259,17 @@ model LeadOptOut {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  passwordHash  String?
-  emailVerified DateTime?
-  image         String?
-  isSuperAdmin  Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  passwordHash   String?
+  emailVerified  DateTime?
+  image          String?
+  isSuperAdmin   Boolean   @default(false)
+  sessionVersion Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
   memberships     Membership[]
   invitationsSent Invitation[] @relation("InvitedBy")
@@ -3744,6 +4296,7 @@ model Membership {
   councilNumber       String?
   councilState        String?
   isActive            Boolean   @default(true)
+  sessionVersion      Int       @default(0)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   deletedAt           DateTime?

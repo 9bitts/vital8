@@ -1,11 +1,12 @@
 import { z } from "zod";
+import { SUPPORTED_TISS_VERSIONS } from "@/lib/tiss/version";
 
 export const healthInsurerSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
   ansRegistration: z.string().min(1),
   cnpj: z.string().min(14).max(18),
-  tissVersion: z.string().default("3.05.00"),
+  tissVersion: z.enum(SUPPORTED_TISS_VERSIONS).default("4.03.00"),
   providerCodeAtInsurer: z.string().optional(),
   contactEmail: z.string().email().optional().or(z.literal("")),
   contactPhone: z.string().optional(),

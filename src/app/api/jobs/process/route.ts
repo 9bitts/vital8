@@ -5,10 +5,12 @@ import {
 } from "@/modules/engagement/services/queue-processor.service";
 import { runAutomationScanners } from "@/modules/engagement/services/automation.service";
 import { scanAndNotify } from "@/modules/analytics/services/notification.service";
+import { scanBiAnomalies } from "@/modules/ai/services/bi-anomaly.service";
 import { reprocessMetricsRange } from "@/modules/analytics/services/aggregation.service";
 import { processScheduledReports } from "@/modules/analytics/services/scheduled-report.service";
 import { processWebhookDeliveries } from "@/modules/api/services/webhook.service";
 import { processRndsSubmissions, scanPendingRndsSubmissions } from "@/modules/interoperability/services/rnds-submission.service";
+import { processFiscalQueue } from "@/modules/finance/services/fiscal-queue.service";
 import { createTenantClient } from "@/lib/db/tenant-client";
 import { runLeadCadenceScanners } from "@/modules/marketing/services/lead-cadence.service";
 import { assertCronAuthorized } from "@/lib/security/cron-auth";
@@ -26,6 +28,7 @@ export async function POST(request: Request) {
   });
 
   let rndsEnqueued = 0;
+  let fiscalProcessed = 0;
   for (const org of orgs) {
     await runAutomationScanners(org.id);
     const db = createTenantClient(org.id);
@@ -35,9 +38,12 @@ export async function POST(request: Request) {
     from.setDate(from.getDate() - 7);
     await reprocessMetricsRange(org.id, from, to);
     await scanAndNotify(org.id);
+    await scanBiAnomalies(org.id);
     await processScheduledReports(org.id);
     const scan = await scanPendingRndsSubmissions(org.id);
     rndsEnqueued += scan.enqueued;
+    const fiscal = await processFiscalQueue(db, org.id, 10);
+    fiscalProcessed += fiscal.processed;
   }
 
   const result = await processCommunicationQueue(100);
@@ -49,6 +55,7 @@ export async function POST(request: Request) {
     ...result,
     rnds: rndsResult,
     rndsEnqueued,
+    fiscalProcessed,
     idempotent: true,
   });
 }

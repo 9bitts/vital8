@@ -32,6 +32,7 @@ export const prescriptionCreateSchema = z.object({
   type: z.enum(["COMUM", "CONTROLE_ESPECIAL"]).default("COMUM"),
   notes: z.string().optional().nullable(),
   items: z.array(prescriptionItemSchema).min(1),
+  confirmSafetyOverride: z.boolean().default(false),
 });
 
 export const certificateCreateSchema = z.object({

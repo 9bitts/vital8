@@ -12,6 +12,7 @@ export default async function ReguasPage() {
     <div className="space-y-4">
       <div className="flex gap-4 text-sm">
         <Link href="/app/relacionamento">Comunicação</Link>
+        <Link href="/app/relacionamento/conversas">Conversas</Link>
         <Link href="/app/relacionamento/nps">NPS</Link>
         <Link href="/app/relacionamento/aprovacoes">Aprovações online</Link>
       </div>

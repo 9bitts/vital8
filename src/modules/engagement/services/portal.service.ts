@@ -21,7 +21,7 @@ export async function logPortalAccess(
 
 export async function getPortalDashboard(session: PortalSessionContext) {
   const now = new Date();
-  const [upcoming, history, documents, receivables, org] = await Promise.all([
+  const [upcoming, history, documents, receivables, fiscalDocuments, paymentLinks, org] = await Promise.all([
     adminPrisma.appointment.findMany({
       where: {
         organizationId: session.organizationId,
@@ -74,13 +74,39 @@ export async function getPortalDashboard(session: PortalSessionContext) {
         dueDate: true,
       },
     }),
+    adminPrisma.fiscalDocument.findMany({
+      where: {
+        organizationId: session.organizationId,
+        patientId: session.patientId,
+        status: "ISSUED",
+        pdfStorageKey: { not: null },
+      },
+      orderBy: { issuedAt: "desc" },
+      select: {
+        id: true,
+        documentType: true,
+        number: true,
+        amountCents: true,
+        issuedAt: true,
+        serviceDescription: true,
+      },
+    }),
+    adminPrisma.patientPaymentLink.findMany({
+      where: {
+        organizationId: session.organizationId,
+        patientId: session.patientId,
+        status: "PENDING",
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, receivableId: true, amountCents: true },
+    }),
     adminPrisma.organization.findFirstOrThrow({
       where: { id: session.organizationId },
       select: { name: true, slug: true },
     }),
   ]);
 
-  return { upcoming, history, documents, receivables, org };
+  return { upcoming, history, documents, receivables, fiscalDocuments, paymentLinks, org };
 }
 
 export async function requestPatientDataCorrection(

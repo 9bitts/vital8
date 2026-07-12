@@ -15,6 +15,7 @@ export class MockPaymentsAdapter implements PaymentsAdapter {
       url: `/pagamento/${linkId}`,
       pixCopyPaste: `00020126580014BR.GOV.BCB.PIX0136${linkId}5204000053039865802BR5913Vital8 Mock6009SAO PAULO62070503***6304ABCD`,
       status: "PENDING",
+      externalId: linkId,
     };
     links.set(linkId, result);
     console.log(

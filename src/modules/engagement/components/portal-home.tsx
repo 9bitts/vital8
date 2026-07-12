@@ -134,20 +134,80 @@ export function PortalHome({ orgSlug }: Props) {
 
       <section>
         <h2 className="font-medium">Documentos liberados</h2>
-        <p className="text-sm text-zinc-500">{dashboard.documents.length} documento(s)</p>
+        <ul className="mt-2 text-sm space-y-2">
+          {dashboard.documents.map((doc) => (
+            <li key={doc.id} className="flex justify-between rounded border p-2">
+              <span>
+                {doc.documentType === "PRESCRIPTION" && "Receita digital"}
+                {doc.documentType === "MEDICAL_CERTIFICATE" && "Atestado"}
+                {doc.documentType === "EXAM_RESULT" && "Resultado de exame"}
+                {" — "}
+                {doc.releasedAt.toLocaleDateString("pt-BR")}
+              </span>
+              {doc.documentType === "PRESCRIPTION" && doc.prescriptionId && (
+                <a
+                  className="text-blue-700 hover:underline"
+                  href={`/api/portal/prescription/${doc.prescriptionId}`}
+                >
+                  Baixar PDF
+                </a>
+              )}
+            </li>
+          ))}
+          {dashboard.documents.length === 0 && (
+            <li className="text-zinc-500">Nenhum documento liberado.</li>
+          )}
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="font-medium">Notas fiscais e recibos</h2>
+        <ul className="mt-2 text-sm space-y-1">
+          {dashboard.fiscalDocuments.map((d) => (
+            <li key={d.id} className="flex justify-between rounded border p-2">
+              <span>
+                {d.documentType === "NFSE" ? "NFS-e" : "Recibo"} {d.number ?? ""} —{" "}
+                {d.serviceDescription ?? "Serviços"} — R${" "}
+                {(d.amountCents / 100).toFixed(2)}
+              </span>
+              <a
+                href={`/api/portal/fiscal/${d.id}`}
+                className="text-blue-700 underline"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Baixar PDF
+              </a>
+            </li>
+          ))}
+          {dashboard.fiscalDocuments.length === 0 && (
+            <li className="text-zinc-500">Nenhum documento fiscal disponível.</li>
+          )}
+        </ul>
       </section>
 
       <section>
         <h2 className="font-medium">Pagamentos em aberto</h2>
         <ul className="text-sm space-y-1">
-          {dashboard.receivables.map((r) => (
-            <li key={r.id}>
-              {r.description} — R$ {((r.totalCents - r.paidCents) / 100).toFixed(2)}{" "}
-              <a href={`/pagamento/${r.id}`} className="text-blue-700 underline">
-                Pagar
-              </a>
-            </li>
-          ))}
+          {dashboard.receivables.map((r) => {
+            const link = dashboard.paymentLinks.find(
+              (p) => p.receivableId === r.id,
+            );
+            const href = link ? `/pagamento/${link.id}` : undefined;
+            return (
+              <li key={r.id}>
+                {r.description} — R${" "}
+                {((r.totalCents - r.paidCents) / 100).toFixed(2)}{" "}
+                {href ? (
+                  <a href={href} className="text-blue-700 underline">
+                    Pagar PIX
+                  </a>
+                ) : (
+                  <span className="text-zinc-500">sem link PIX</span>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </section>
 

@@ -89,16 +89,22 @@ export type PrescriptionPdfInput = {
     quantity?: string | null;
   }>;
   date: Date;
+  validationCode?: string | null;
+  validationUrl?: string | null;
+  controlBookNumber?: string | null;
 };
 
 export function generatePrescriptionPdf(input: PrescriptionPdfInput): Buffer {
   const lines = [
     ...headerLines(input.header),
     input.type === "CONTROLE_ESPECIAL"
-      ? "RECEITUARIO DE CONTROLE ESPECIAL - 1a VIA FARMACIA / 2a VIA PACIENTE"
-      : "RECEITUARIO MEDICO",
+      ? "RECEITUARIO DE CONTROLE ESPECIAL - Portaria 344/98"
+      : "RECEITUARIO MEDICO DIGITAL",
     `Paciente: ${input.patientName}`,
     `Data: ${input.date.toLocaleDateString("pt-BR")}`,
+    input.controlBookNumber
+      ? `Livro/Numero controle especial: ${input.controlBookNumber}`
+      : "",
     "",
     ...input.items.flatMap((item, i) => [
       `${i + 1}. ${item.drugName}`,
@@ -106,7 +112,17 @@ export function generatePrescriptionPdf(input: PrescriptionPdfInput): Buffer {
       item.quantity ? `   Quantidade: ${item.quantity}` : "",
       "",
     ]),
-  ].filter((l) => l !== undefined);
+  ].filter((l) => l !== undefined) as string[];
+
+  if (input.validationCode && input.validationUrl) {
+    lines.push(
+      "--- VALIDACAO FARMACIA (CFM) ---",
+      `Codigo: ${input.validationCode}`,
+      `URL: ${input.validationUrl}`,
+      "Escaneie ou informe o codigo na farmacia.",
+      "",
+    );
+  }
 
   if (input.type === "CONTROLE_ESPECIAL") {
     lines.push("--- SEGUNDA VIA (PACIENTE) ---", "");
@@ -151,6 +167,58 @@ export function generateExamRequestPdf(input: ExamRequestPdfInput): Buffer {
     `Data: ${input.date.toLocaleDateString("pt-BR")}`,
     "",
     ...input.exams.map((e, i) => `${i + 1}. ${e}`),
+    input.notes ? `\nObs: ${input.notes}` : "",
+  ].filter(Boolean) as string[];
+  return buildPdf(lines);
+}
+
+export type EncounterSummaryPdfInput = {
+  header: PdfHeader;
+  patientName: string;
+  specialty?: string | null;
+  modality: string;
+  startedAt: Date;
+  sectionSummaries: string[];
+};
+
+export function generateEncounterSummaryPdf(
+  input: EncounterSummaryPdfInput,
+): Buffer {
+  const lines = [
+    ...headerLines(input.header),
+    "REGISTRO CLINICO ASSINADO",
+    `Paciente: ${input.patientName}`,
+    `Especialidade: ${input.specialty ?? "—"}`,
+    `Modalidade: ${input.modality}`,
+    `Início: ${input.startedAt.toLocaleString("pt-BR")}`,
+    "",
+    "Resumo das seções:",
+    ...input.sectionSummaries.map((s, i) => `${i + 1}. ${s}`),
+  ];
+  return buildPdf(lines);
+}
+
+export type ExamResultPdfInput = {
+  header: PdfHeader;
+  patientName: string;
+  fileName?: string | null;
+  values: Array<{ name: string; value: string; unit?: string | null }>;
+  notes?: string | null;
+  date: Date;
+};
+
+export function generateExamResultPdf(input: ExamResultPdfInput): Buffer {
+  const lines = [
+    ...headerLines(input.header),
+    "LAUDO DE EXAME",
+    `Paciente: ${input.patientName}`,
+    `Data: ${input.date.toLocaleDateString("pt-BR")}`,
+    input.fileName ? `Arquivo: ${input.fileName}` : "",
+    "",
+    ...input.values.map(
+      (v, i) =>
+        `${i + 1}. ${v.name}: ${v.value}${v.unit ? ` ${v.unit}` : ""}`,
+    ),
     input.notes ? `\nObs: ${input.notes}` : "",
   ].filter(Boolean) as string[];
   return buildPdf(lines);

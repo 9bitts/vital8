@@ -79,7 +79,7 @@ export async function getDashboardAction(year?: number, month?: number) {
   await requireBi(ctx);
   return {
     kind: "executive" as const,
-    data: await getExecutiveDashboard(ctx.organizationId, y, m),
+    data: await getExecutiveDashboard(ctx.organizationId, y, m, ctx.branchId),
     hideClinical: ctx.role === "FINANCEIRO",
   };
 }

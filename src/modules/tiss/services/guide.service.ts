@@ -122,7 +122,7 @@ export async function generateGuideFromAppointment(
   const guideType: TissGuideType =
     appointment.service.category?.toLowerCase().includes("consulta")
       ? "GUIA_CONSULTA"
-      : "GUIA_CONSULTA";
+      : "GUIA_SP_SADT";
 
   const consultationType: TissConsultationType = "PRIMEIRA";
   const accidentIndication: TissAccidentIndication = "NAO_ACIDENTE";
@@ -146,20 +146,25 @@ export async function generateGuideFromAppointment(
     }
   }
 
-  const validationErrors = validateGuideFields({
-    guideType,
-    beneficiaryCard: cardNumber,
-    beneficiaryCardValidUntil: appointment.patientInsurancePlan.validUntil,
-    beneficiaryName: appointment.patient.fullName,
-    ansRegistration: insurer.ansRegistration,
-    providerDocument: org.documentNumber,
-    professionalName: appointment.professional.displayName,
-    tussCode,
-    requiresAuthorization: insurer.requiresAuthorization,
-    authorizationValid,
-    procedures: [{ tussCode: tussCode ?? "", quantity: 1, unitValueCents: priceCents }],
-    consultationType,
-  });
+  const validationErrors = validateGuideFields(
+    {
+      guideType,
+      beneficiaryCard: cardNumber,
+      beneficiaryCardValidUntil: appointment.patientInsurancePlan.validUntil,
+      beneficiaryName: appointment.patient.fullName,
+      ansRegistration: insurer.ansRegistration,
+      providerDocument: org.documentNumber,
+      providerCnes: cnes,
+      professionalName: appointment.professional.displayName,
+      professionalCouncilNumber: appointment.professional.councilNumber,
+      tussCode,
+      requiresAuthorization: insurer.requiresAuthorization,
+      authorizationValid,
+      procedures: [{ tussCode: tussCode ?? "", quantity: 1, unitValueCents: priceCents }],
+      consultationType,
+    },
+    insurer.tissVersion,
+  );
 
   const guideNumber = await nextSequenceNumber(
     db,
@@ -292,24 +297,29 @@ export async function updateGuideFields(
   });
   void updated;
 
-  const validationErrors = validateGuideFields({
-    guideType: guide.guideType,
-    beneficiaryCard: guide.beneficiaryCard,
-    beneficiaryCardValidUntil: guide.beneficiaryCardValidUntil,
-    beneficiaryName: guide.beneficiaryName,
-    ansRegistration: guide.ansRegistration,
-    providerDocument: guide.providerDocument,
-    professionalName: guide.professionalName,
-    tussCode: (guide.procedures as TissProcedureLine[])[0]?.tussCode,
-    requiresAuthorization: guide.healthInsurer.requiresAuthorization,
-    authorizationValid: !guide.healthInsurer.requiresAuthorization || !!guide.priorAuthorizationId,
-    procedures: (guide.procedures as TissProcedureLine[]).map((p) => ({
-      tussCode: p.tussCode,
-      quantity: p.quantity,
-      unitValueCents: p.unitValueCents,
-    })),
-    consultationType: fields.consultationType ?? guide.consultationType,
-  });
+  const validationErrors = validateGuideFields(
+    {
+      guideType: guide.guideType,
+      beneficiaryCard: guide.beneficiaryCard,
+      beneficiaryCardValidUntil: guide.beneficiaryCardValidUntil,
+      beneficiaryName: guide.beneficiaryName,
+      ansRegistration: guide.ansRegistration,
+      providerDocument: guide.providerDocument,
+      providerCnes: guide.providerCnes,
+      professionalName: guide.professionalName,
+      professionalCouncilNumber: guide.professionalCouncilNumber,
+      tussCode: (guide.procedures as TissProcedureLine[])[0]?.tussCode,
+      requiresAuthorization: guide.healthInsurer.requiresAuthorization,
+      authorizationValid: !guide.healthInsurer.requiresAuthorization || !!guide.priorAuthorizationId,
+      procedures: (guide.procedures as TissProcedureLine[]).map((p) => ({
+        tussCode: p.tussCode,
+        quantity: p.quantity,
+        unitValueCents: p.unitValueCents,
+      })),
+      consultationType: fields.consultationType ?? guide.consultationType,
+    },
+    guide.healthInsurer.tissVersion,
+  );
 
   return db.tissGuide.update({
     where: { id: guideId },
@@ -327,24 +337,29 @@ export async function revalidateGuide(db: TenantClient, guideId: string) {
   });
 
   const procedures = guide.procedures as TissProcedureLine[];
-  const validationErrors = validateGuideFields({
-    guideType: guide.guideType,
-    beneficiaryCard: guide.beneficiaryCard,
-    beneficiaryCardValidUntil: guide.beneficiaryCardValidUntil,
-    beneficiaryName: guide.beneficiaryName,
-    ansRegistration: guide.ansRegistration,
-    providerDocument: guide.providerDocument,
-    professionalName: guide.professionalName,
-    tussCode: procedures[0]?.tussCode,
-    requiresAuthorization: guide.healthInsurer.requiresAuthorization,
-    authorizationValid: !guide.healthInsurer.requiresAuthorization || !!guide.priorAuthorizationId,
-    procedures: procedures.map((p) => ({
-      tussCode: p.tussCode,
-      quantity: p.quantity,
-      unitValueCents: p.unitValueCents,
-    })),
-    consultationType: guide.consultationType,
-  });
+  const validationErrors = validateGuideFields(
+    {
+      guideType: guide.guideType,
+      beneficiaryCard: guide.beneficiaryCard,
+      beneficiaryCardValidUntil: guide.beneficiaryCardValidUntil,
+      beneficiaryName: guide.beneficiaryName,
+      ansRegistration: guide.ansRegistration,
+      providerDocument: guide.providerDocument,
+      providerCnes: guide.providerCnes,
+      professionalName: guide.professionalName,
+      professionalCouncilNumber: guide.professionalCouncilNumber,
+      tussCode: procedures[0]?.tussCode,
+      requiresAuthorization: guide.healthInsurer.requiresAuthorization,
+      authorizationValid: !guide.healthInsurer.requiresAuthorization || !!guide.priorAuthorizationId,
+      procedures: procedures.map((p) => ({
+        tussCode: p.tussCode,
+        quantity: p.quantity,
+        unitValueCents: p.unitValueCents,
+      })),
+      consultationType: guide.consultationType,
+    },
+    guide.healthInsurer.tissVersion,
+  );
 
   return db.tissGuide.update({
     where: { id: guideId },

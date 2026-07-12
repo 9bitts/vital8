@@ -9,7 +9,8 @@ import {
 } from "@/lib/auth/guards";
 import { adminPrisma } from "@/lib/db/admin-client";
 import { encryptPHI } from "@/lib/crypto/phi";
-import { getPrescriptionProvider } from "@/lib/integrations/prescription-provider";
+import { signClinicalDocument } from "@/modules/emr/services/clinical-signature.service";
+import { searchDrugsWithProviderAction } from "@/modules/emr/actions/prescription.actions";
 import {
   canSignEncounter,
   canViewAccessLog,
@@ -47,6 +48,7 @@ import {
   getPrescription,
   repeatPrescription,
   listPatientPrescriptions,
+  PrescriptionSafetyError,
 } from "@/modules/emr/services/prescription.service";
 import {
   generateCertificatePdf,
@@ -150,7 +152,14 @@ export async function updateSectionAction(
 
 export async function signEncounterAction(
   input: unknown,
-): Promise<ActionResult<{ contentHash: string }>> {
+): Promise<
+  ActionResult<{
+    contentHash: string;
+    verificationCode?: string;
+    redirectUrl?: string;
+    lacunaPending?: boolean;
+  }>
+> {
   try {
     const ctx = await requireAuth([...CLINICAL_ROLES]);
     if (!canSignEncounter(ctx.role)) {
@@ -166,7 +175,15 @@ export async function signEncounterAction(
     );
     revalidatePath(`/app/atendimento/${parsed.encounterId}`);
     revalidatePath("/app/recepcao");
-    return { success: true, data: { contentHash: result.contentHash } };
+    return {
+      success: true,
+      data: {
+        contentHash: result.contentHash,
+        verificationCode: result.verificationCode,
+        redirectUrl: result.redirectUrl,
+        lacunaPending: result.lacunaPending,
+      },
+    };
   } catch (e) {
     if (e instanceof AuthError) return { success: false, error: e.message };
     if (e instanceof Error) return { success: false, error: e.message };
@@ -197,19 +214,44 @@ export async function addAmendmentAction(
 
 export async function createPrescriptionAction(
   input: unknown,
-): Promise<ActionResult<{ id: string }>> {
+): Promise<
+  ActionResult<{
+    id: string;
+    validationCode?: string;
+    warnings?: string[];
+    redirectUrl?: string;
+  }>
+> {
   try {
     const ctx = await requireAuth([...CLINICAL_ROLES]);
     const parsed = prescriptionCreateSchema.parse(input);
-    const rx = await createPrescription(
+    const result = await createPrescription(
       ctx.db,
       ctx.organizationId,
       ctx.userId,
+      ctx.userName,
       parsed,
     );
     revalidatePath(`/app/atendimento/${parsed.encounterId}`);
-    return { success: true, data: { id: rx.id } };
+    return {
+      success: true,
+      data: {
+        id: result.prescription.id,
+        validationCode: result.prescription.validationCode ?? undefined,
+        warnings: result.safetyAlerts
+          .filter((a) => a.severity === "WARNING")
+          .map((a) => a.message),
+        redirectUrl: result.redirectUrl,
+      },
+    };
   } catch (e) {
+    if (e instanceof PrescriptionSafetyError) {
+      return {
+        success: false,
+        error: e.message,
+        alerts: e.alerts,
+      } as ActionResult<{ id: string; validationCode?: string; warnings?: string[] }>;
+    }
     if (e instanceof EncounterImmutableError) {
       return { success: false, error: e.message };
     }
@@ -224,17 +266,18 @@ export async function repeatPrescriptionAction(
   try {
     const ctx = await requireAuth([...CLINICAL_ROLES]);
     const parsed = repeatPrescriptionSchema.parse(input);
-    const rx = await repeatPrescription(
+    const { prescription } = await repeatPrescription(
       ctx.db,
       ctx.organizationId,
       ctx.userId,
+      ctx.userName,
       parsed.prescriptionId,
       parsed.encounterId,
     );
     if (parsed.encounterId) {
       revalidatePath(`/app/atendimento/${parsed.encounterId}`);
     }
-    return { success: true, data: { id: rx.id } };
+    return { success: true, data: { id: prescription.id } };
   } catch (e) {
     if (e instanceof EncounterImmutableError) {
       return { success: false, error: e.message };
@@ -275,6 +318,9 @@ export async function getPrescriptionPdfAction(
       type: rx.type,
       items: rx.items,
       date: new Date(),
+      validationCode: rx.validationCode,
+      validationUrl: rx.validationUrl,
+      controlBookNumber: rx.controlBookNumber,
     });
 
     return { success: true, data: pdf.toString("base64") };
@@ -286,7 +332,7 @@ export async function getPrescriptionPdfAction(
 
 export async function createCertificateAction(
   input: unknown,
-): Promise<ActionResult<{ id: string; pdfBase64: string }>> {
+): Promise<ActionResult<{ id: string; pdfBase64: string; verificationCode?: string; redirectUrl?: string }>> {
   try {
     const ctx = await requireAuth([...CLINICAL_ROLES]);
     const parsed = certificateCreateSchema.parse(input);
@@ -348,9 +394,42 @@ export async function createCertificateAction(
       date: new Date(),
     });
 
+    const signOutcome = await signClinicalDocument({
+      db: ctx.db,
+      organizationId: ctx.organizationId,
+      userId: ctx.userId,
+      userName: ctx.userName,
+      entityType: "MEDICAL_CERTIFICATE",
+      entityId: cert.id,
+      canonicalContent: JSON.stringify({
+        certificateId: cert.id,
+        type: cert.type,
+        cidCode: cert.cidCode,
+        body,
+      }),
+      pdfBuffer: pdf,
+      auditMeta: { returnPath: `/app/atendimento/${parsed.encounterId}` },
+    });
+
+    if (signOutcome.kind === "lacuna_redirect") {
+      return {
+        success: true,
+        data: {
+          id: cert.id,
+          pdfBase64: pdf.toString("base64"),
+          verificationCode: signOutcome.verificationCode,
+          redirectUrl: signOutcome.redirectUrl,
+        },
+      };
+    }
+
     return {
       success: true,
-      data: { id: cert.id, pdfBase64: pdf.toString("base64") },
+      data: {
+        id: cert.id,
+        pdfBase64: pdf.toString("base64"),
+        verificationCode: signOutcome.verificationCode,
+      },
     };
   } catch (e) {
     if (e instanceof Error) return { success: false, error: e.message };
@@ -471,7 +550,7 @@ export async function searchCid10Action(input: unknown) {
 export async function searchDrugsAction(input: unknown) {
   await requireAuth([...CLINICAL_ROLES]);
   const parsed = drugSearchSchema.parse(input);
-  return getPrescriptionProvider().searchDrugs(parsed.query);
+  return searchDrugsWithProviderAction(parsed.query);
 }
 
 export async function getPatientEmrHistoryAction(patientId: string) {
@@ -556,6 +635,7 @@ export async function createExamResultAction(
       ctx.db,
       ctx.organizationId,
       ctx.userId,
+      ctx.userName,
       parsed,
     );
     revalidatePath(`/app/atendimento/${parsed.encounterId}`);

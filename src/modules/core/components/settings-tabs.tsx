@@ -143,6 +143,11 @@ export function SettingsTabs({
             </TabsTrigger>
           )}
           {canManage && (
+            <TabsTrigger value="fiscal" asChild>
+              <a href="/app/configuracoes/fiscal">Fiscal</a>
+            </TabsTrigger>
+          )}
+          {canManage && (
             <TabsTrigger value="ia" asChild>
               <a href="/app/configuracoes/ia">IA</a>
             </TabsTrigger>

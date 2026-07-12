@@ -13,7 +13,12 @@ export async function getExecutiveDashboard(
   organizationId: string,
   year: number,
   month: number,
+  branchId?: string | null,
 ) {
+  if (branchId) {
+    return getExecutiveDashboardByBranch(organizationId, year, month, branchId);
+  }
+
   const current = monthRange(year, month);
   const prev = previousMonth(year, month);
   const previous = monthRange(prev.year, prev.month);
@@ -120,6 +125,74 @@ export async function getExecutiveDashboard(
       revenue: linearProjection(revenue, dayOfMonth, daysInMonth),
       appointments: linearProjection(completed, dayOfMonth, daysInMonth),
     },
+  };
+}
+
+async function getExecutiveDashboardByBranch(
+  organizationId: string,
+  year: number,
+  month: number,
+  branchId: string,
+) {
+  const current = monthRange(year, month);
+  const prev = previousMonth(year, month);
+  const previous = monthRange(prev.year, prev.month);
+
+  const tenant = (await import("@/lib/db/tenant-client")).createTenantClient(
+    organizationId,
+  );
+
+  const [curAppts, prevAppts, payments] = await Promise.all([
+    tenant.appointment.findMany({
+      where: {
+        branchId,
+        startsAt: { gte: current.from, lte: current.to },
+      },
+    }),
+    tenant.appointment.findMany({
+      where: {
+        branchId,
+        startsAt: { gte: previous.from, lte: previous.to },
+      },
+    }),
+    tenant.payment.findMany({
+      where: {
+        createdAt: { gte: current.from, lte: current.to },
+        cashRegister: { branchId },
+      },
+    }),
+  ]);
+
+  const completed = curAppts.filter((a) => a.status === "FINALIZADO").length;
+  const prevCompleted = prevAppts.filter((a) => a.status === "FINALIZADO").length;
+  const scheduled = curAppts.length;
+  const noShow = curAppts.filter((a) => a.status === "FALTOU").length;
+  const revenue = payments.reduce((s, p) => s + p.netAmountCents, 0);
+
+  return {
+    period: current.label,
+    branchId,
+    kpis: {
+      completed: {
+        value: completed,
+        changePct: pctChange(completed, prevCompleted),
+      },
+      revenue: { value: revenue, changePct: null },
+      noShowRate: {
+        value: scheduled ? Math.round((noShow / scheduled) * 100) : 0,
+      },
+      occupation: { value: 0 },
+      nps: { value: null },
+    },
+    dailyRevenue: [],
+    funnel: {
+      scheduled,
+      confirmed: curAppts.filter((a) => a.status === "CONFIRMADO").length,
+      completed,
+      paid: revenue > 0 ? completed : 0,
+    },
+    occupationRanking: [],
+    projection: { revenue: revenue, appointments: completed },
   };
 }
 

@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 import type { Role } from "@/generated/prisma/client";
 import { refreshSessionOrganization } from "@/lib/auth/auth";
+import { canGrantRole } from "@/lib/auth/role-hierarchy";
+import {
+  incrementMembershipSessionVersion,
+  incrementUserSessionVersion,
+} from "@/lib/auth/session-version.service";
 import { AuthError, getRequestMeta, requireAuth } from "@/lib/auth/guards";
 import { adminPrisma } from "@/lib/db/admin-client";
 import {
@@ -92,6 +97,13 @@ export async function inviteMemberAction(
       return { success: false, error: "Convites para OWNER não são permitidos" };
     }
 
+    if (!canGrantRole(ctx.role, parsed.data.role)) {
+      return {
+        success: false,
+        error: "Você não pode conceder um papel superior ao seu",
+      };
+    }
+
     const email = parsed.data.email.toLowerCase();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
@@ -149,6 +161,13 @@ export async function updateMemberRoleAction(
       return { success: false, error: "Membro não encontrado" };
     }
 
+    if (!canGrantRole(ctx.role, parsed.data.role)) {
+      return {
+        success: false,
+        error: "Você não pode conceder um papel superior ao seu",
+      };
+    }
+
     if (membership.role === "OWNER" && parsed.data.role !== "OWNER") {
       const ownerCount = await ctx.db.membership.count({
         where: { role: "OWNER", isActive: true },
@@ -162,6 +181,8 @@ export async function updateMemberRoleAction(
       where: { id: parsed.data.membershipId },
       data: { role: parsed.data.role },
     });
+
+    await incrementMembershipSessionVersion(membership.userId, ctx.organizationId);
 
     const meta = await getRequestMeta();
     await createAuditLog({
@@ -220,6 +241,8 @@ export async function deactivateMemberAction(
       where: { id: parsed.data.membershipId },
       data: { isActive: false, deletedAt: new Date() },
     });
+
+    await incrementMembershipSessionVersion(membership.userId, ctx.organizationId);
 
     const meta = await getRequestMeta();
     await createAuditLog({
@@ -385,6 +408,7 @@ export async function acceptInvitationAction(
           role: invitation.role,
           isActive: true,
           deletedAt: null,
+          sessionVersion: { increment: 1 },
         },
       });
     } else {
@@ -402,6 +426,12 @@ export async function acceptInvitationAction(
       data: { acceptedAt: new Date() },
     });
   });
+
+  if (parsed.data.password) {
+    await incrementUserSessionVersion(user.id);
+  } else if (existingMembership) {
+    await incrementMembershipSessionVersion(user.id, invitation.organizationId);
+  }
 
   const meta = await getRequestMeta();
   await createAuditLog({

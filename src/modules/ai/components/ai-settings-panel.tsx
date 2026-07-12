@@ -28,6 +28,9 @@ export function AiSettingsPanel({ initial }: { initial: SettingsData }) {
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [faqQ, setFaqQ] = useState("");
   const [faqA, setFaqA] = useState("");
+  const [discardAudio, setDiscardAudio] = useState(
+    initial.settings?.discardAudioAfterTranscription ?? true,
+  );
   const [msg, setMsg] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -39,7 +42,10 @@ export function AiSettingsPanel({ initial }: { initial: SettingsData }) {
 
   function saveSettings() {
     startTransition(async () => {
-      const r = await saveAiSettingsAction({ enabledResources: enabled });
+      const r = await saveAiSettingsAction({
+        enabledResources: enabled,
+        discardAudioAfterTranscription: discardAudio,
+      });
       setMsg(r.success ? "Configurações salvas" : r.error ?? "Erro");
     });
   }
@@ -112,6 +118,14 @@ export function AiSettingsPanel({ initial }: { initial: SettingsData }) {
           ))}
         </div>
         <Button onClick={saveSettings} disabled={pending}>Salvar recursos</Button>
+        <label className="flex items-center gap-2 text-sm mt-2">
+          <input
+            type="checkbox"
+            checked={discardAudio}
+            onChange={(e) => setDiscardAudio(e.target.checked)}
+          />
+          Descartar áudio após transcrição (Scribe — padrão recomendado)
+        </label>
       </section>
 
       <section className="rounded-lg border p-4 space-y-3">

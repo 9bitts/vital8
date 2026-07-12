@@ -1,5 +1,16 @@
 import type { TenantClient } from "@/lib/db/tenant-client";
 import { sumCents } from "@/lib/money";
+import { branchFilter } from "@/modules/admin/services/branch.service";
+
+function paymentBranchWhere(branchId: string | null | undefined) {
+  if (!branchId) return {};
+  return { cashRegister: { branchId } };
+}
+
+function saleBranchWhere(branchId: string | null | undefined) {
+  if (!branchId) return {};
+  return { appointment: { branchId } };
+}
 
 function pendingSum(sum: {
   _sum: { totalCents: number | null; paidCents: number | null };
@@ -11,15 +22,27 @@ export async function getCashFlow(
   db: TenantClient,
   from: Date,
   to: Date,
+  branchId?: string | null,
 ) {
   const payments = await db.payment.findMany({
-    where: { createdAt: { gte: from, lte: to } },
+    where: {
+      createdAt: { gte: from, lte: to },
+      ...paymentBranchWhere(branchId),
+    },
   });
 
   const receivables = await db.receivable.findMany({
     where: {
       dueDate: { gte: from, lte: to },
       status: { in: ["ABERTO", "PARCIAL", "VENCIDO"] },
+      ...(branchId
+        ? {
+            OR: [
+              { sale: saleBranchWhere(branchId) },
+              { payments: { some: paymentBranchWhere(branchId) } },
+            ],
+          }
+        : {}),
     },
   });
 
@@ -51,12 +74,16 @@ export async function getDre(
   db: TenantClient,
   year: number,
   month: number,
+  branchId?: string | null,
 ) {
   const start = new Date(year, month - 1, 1);
   const end = new Date(year, month, 0, 23, 59, 59);
 
   const payments = await db.payment.findMany({
-    where: { createdAt: { gte: start, lte: end } },
+    where: {
+      createdAt: { gte: start, lte: end },
+      ...paymentBranchWhere(branchId),
+    },
   });
 
   const payables = await db.payable.findMany({
@@ -87,7 +114,10 @@ export async function getDre(
   };
 }
 
-export async function getFinanceDashboard(db: TenantClient) {
+export async function getFinanceDashboard(
+  db: TenantClient,
+  branchId?: string | null,
+) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const weekEnd = new Date(today);
@@ -95,25 +125,42 @@ export async function getFinanceDashboard(db: TenantClient) {
 
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
+  const receivableBranch = branchId
+    ? {
+        OR: [
+          { sale: saleBranchWhere(branchId) },
+          { payments: { some: paymentBranchWhere(branchId) } },
+        ],
+      }
+    : {};
+
   const [dueToday, dueWeek, overdue, monthPayments, upcomingPayables, openRegister] =
     await Promise.all([
       db.receivable.aggregate({
-        where: { dueDate: today, status: { in: ["ABERTO", "PARCIAL"] } },
+        where: {
+          dueDate: today,
+          status: { in: ["ABERTO", "PARCIAL"] },
+          ...receivableBranch,
+        },
         _sum: { totalCents: true, paidCents: true },
       }),
       db.receivable.aggregate({
         where: {
           dueDate: { gte: today, lte: weekEnd },
           status: { in: ["ABERTO", "PARCIAL"] },
+          ...receivableBranch,
         },
         _sum: { totalCents: true, paidCents: true },
       }),
       db.receivable.aggregate({
-        where: { status: "VENCIDO" },
+        where: { status: "VENCIDO", ...receivableBranch },
         _sum: { totalCents: true, paidCents: true },
       }),
       db.payment.aggregate({
-        where: { createdAt: { gte: monthStart } },
+        where: {
+          createdAt: { gte: monthStart },
+          ...paymentBranchWhere(branchId),
+        },
         _sum: { netAmountCents: true },
       }),
       db.payable.findMany({
@@ -125,7 +172,7 @@ export async function getFinanceDashboard(db: TenantClient) {
         take: 10,
       }),
       db.cashRegister.findFirst({
-        where: { status: "ABERTO" },
+        where: { status: "ABERTO", ...branchFilter(branchId) },
         include: { entries: true },
       }),
     ]);
@@ -144,11 +191,13 @@ export async function getBillingReport(
   db: TenantClient,
   from: Date,
   to: Date,
+  branchId?: string | null,
 ) {
   const sales = await db.sale.findMany({
     where: {
       status: "CONFIRMADA",
       createdAt: { gte: from, lte: to },
+      ...(branchId ? saleBranchWhere(branchId) : {}),
     },
     include: {
       items: { include: { service: true } },

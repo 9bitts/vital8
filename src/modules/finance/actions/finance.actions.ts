@@ -5,12 +5,16 @@ import {
   AuthError,
   getRequestMeta,
   requireAuth,
+  requireValidBranch,
   type ActionResult,
 } from "@/lib/auth/guards";
 import { createAuditLog } from "@/modules/core/services/audit.service";
 import { formatBRL } from "@/lib/money";
-import { getNfseAdapter } from "@/lib/integrations/nfse";
 import { getPaymentsAdapter } from "@/lib/integrations/payments";
+import {
+  enqueueFiscalEmission,
+  emitFiscalDocument,
+} from "@/modules/finance/services/fiscal-document.service";
 import {
   canAccessFinance,
   canAuthorizeDiscount,
@@ -84,7 +88,7 @@ async function auditFinance(
 export async function getFinanceDashboardAction() {
   const ctx = await requireAuth([...FINANCE_ROLES]);
   if (!canAccessFinance(ctx.role)) throw new AuthError("Acesso negado", "FORBIDDEN");
-  return getFinanceDashboard(ctx.db);
+  return getFinanceDashboard(ctx.db, ctx.branchId);
 }
 
 export async function prepareCheckoutAction(appointmentId: string) {
@@ -108,7 +112,7 @@ export async function prepareCheckoutAction(appointmentId: string) {
     insurer,
   );
 
-  const openRegister = await getOpenCashRegister(ctx.db, ctx.userId);
+  const openRegister = await getOpenCashRegister(ctx.db, ctx.userId, ctx.branchId);
   const isInsurance = !appt.isPrivate;
   const copPct = appt.patientInsurancePlan?.healthInsurer?.coparticipationPercent ?? 0;
   const coparticipationCents = isInsurance
@@ -156,20 +160,20 @@ export async function checkoutAction(
 
     let nfseNumber: string | undefined;
     if (parsed.emitNfse) {
-      const patient = await ctx.db.patient.findFirstOrThrow({
-        where: { id: parsed.patientId },
-      });
-      const nfse = await getNfseAdapter().issue({
-        organizationId: ctx.organizationId,
-        patientName: patient.socialName ?? patient.fullName,
-        serviceDescription: parsed.items.map((i) => i.description).join(", "),
-        amountCents: result.sale.totalCents,
-      });
-      nfseNumber = nfse.number;
-      await ctx.db.sale.update({
-        where: { id: result.sale.id },
-        data: { nfseNumber },
-      });
+      const doc = await enqueueFiscalEmission(
+        ctx.db,
+        ctx.organizationId,
+        result.payment.id,
+        { force: true },
+      );
+      if (doc) {
+        const issued = await emitFiscalDocument(
+          ctx.db,
+          ctx.organizationId,
+          doc.id,
+        );
+        nfseNumber = issued.number ?? undefined;
+      }
     }
 
     const receiptText = [
@@ -208,11 +212,14 @@ export async function openCashRegisterAction(
   try {
     const ctx = await requireAuth([...FINANCE_ROLES]);
     const parsed = openCashRegisterSchema.parse(input);
+    const branchId = parsed.branchId ?? ctx.branchId;
+    if (branchId) await requireValidBranch(ctx, branchId);
     const reg = await openCashRegister(
       ctx.db,
       ctx.organizationId,
       ctx.userId,
       parsed.openingAmountCents,
+      branchId,
     );
     await auditFinance("cash.open", ctx, "CashRegister", reg.id, parsed);
     revalidatePath("/app/financeiro/caixa");
@@ -261,8 +268,8 @@ export async function cashMovementAction(input: unknown): Promise<ActionResult> 
 
 export async function getCashRegisterStateAction() {
   const ctx = await requireAuth([...FINANCE_ROLES]);
-  const open = await getOpenCashRegister(ctx.db, ctx.userId);
-  const history = await listCashRegisterHistory(ctx.db, ctx.userId);
+  const open = await getOpenCashRegister(ctx.db, ctx.userId, ctx.branchId);
+  const history = await listCashRegisterHistory(ctx.db, ctx.userId, ctx.branchId);
   return { open, history };
 }
 
@@ -300,6 +307,7 @@ export async function registerPaymentAction(
       ctx.userId,
       parsed,
     );
+    await enqueueFiscalEmission(ctx.db, ctx.organizationId, payment.id);
     await auditFinance("payment.register", ctx, "Payment", payment.id, parsed);
     revalidatePath("/app/financeiro/receber");
     return { success: true, data: { id: payment.id } };
@@ -360,12 +368,12 @@ export async function listPayablesAction() {
 
 export async function getCashFlowAction(from: string, to: string) {
   const ctx = await requireAuth([...FINANCE_ROLES]);
-  return getCashFlow(ctx.db, new Date(from), new Date(to));
+  return getCashFlow(ctx.db, new Date(from), new Date(to), ctx.branchId);
 }
 
 export async function getDreAction(year: number, month: number) {
   const ctx = await requireAuth([...FINANCE_ROLES]);
-  return getDre(ctx.db, year, month);
+  return getDre(ctx.db, year, month, ctx.branchId);
 }
 
 export async function saveCommissionRuleAction(
@@ -508,20 +516,24 @@ export async function runCollectionRemindersAction(): Promise<ActionResult<{ sen
 
 export async function getBillingReportAction(from: string, to: string) {
   const ctx = await requireAuth([...FINANCE_ROLES]);
-  return getBillingReport(ctx.db, new Date(from), new Date(to));
+  return getBillingReport(ctx.db, new Date(from), new Date(to), ctx.branchId);
 }
 
-export async function createPaymentLinkAction(
-  amountCents: number,
-  description: string,
-  patientName: string,
-) {
+export async function createPaymentLinkAction(input: {
+  amountCents: number;
+  description: string;
+  patientName: string;
+  patientId?: string;
+  receivableId?: string;
+}) {
   const ctx = await requireAuth([...FINANCE_ROLES]);
   return getPaymentsAdapter().createLink({
     organizationId: ctx.organizationId,
-    amountCents,
-    description,
-    patientName,
+    amountCents: input.amountCents,
+    description: input.description,
+    patientName: input.patientName,
+    patientId: input.patientId,
+    receivableId: input.receivableId,
   });
 }
 

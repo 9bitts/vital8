@@ -1,6 +1,8 @@
 import type { TenantClient } from "@/lib/db/tenant-client";
 import { encryptPHI } from "@/lib/crypto/phi";
 import { getStorageAdapter } from "@/lib/integrations/storage";
+import { signClinicalDocument } from "./clinical-signature.service";
+import { generateExamResultPdf } from "./pdf.service";
 import { logRecordAccess } from "./record-access.service";
 import { assertEncounterMutable } from "./encounter.service";
 
@@ -8,6 +10,7 @@ export async function createExamResult(
   db: TenantClient,
   organizationId: string,
   userId: string,
+  userName: string,
   input: {
     encounterId: string;
     requestId?: string | null;
@@ -25,12 +28,15 @@ export async function createExamResult(
 ) {
   const encounter = await db.encounter.findFirstOrThrow({
     where: { id: input.encounterId },
+    include: { patient: true, professional: true },
   });
   assertEncounterMutable(encounter.status);
 
   let storageKey: string | null = null;
+  let uploadedPdf: Buffer | null = null;
   if (input.fileBase64 && input.fileName && input.mimeType) {
     const buffer = Buffer.from(input.fileBase64, "base64");
+    uploadedPdf = buffer;
     const stored = await getStorageAdapter().upload(
       organizationId,
       encounter.patientId,
@@ -41,7 +47,7 @@ export async function createExamResult(
     storageKey = stored.storageKey;
   }
 
-  return db.examResult.create({
+  const result = await db.examResult.create({
     data: {
       organizationId,
       patientId: encounter.patientId,
@@ -65,6 +71,42 @@ export async function createExamResult(
     },
     include: { values: true },
   });
+
+  const org = await db.organization.findFirstOrThrow({ where: { id: organizationId } });
+  const pdfBuffer =
+    uploadedPdf ??
+    generateExamResultPdf({
+      header: {
+        orgName: org.name,
+        professionalName: encounter.professional.displayName,
+        council: encounter.professional.councilType ?? undefined,
+        councilNumber: encounter.professional.councilNumber ?? undefined,
+        councilState: encounter.professional.councilState ?? undefined,
+      },
+      patientName: encounter.patient.socialName ?? encounter.patient.fullName,
+      fileName: input.fileName,
+      values: result.values,
+      notes: input.notes ?? null,
+      date: new Date(),
+    });
+
+  await signClinicalDocument({
+    db,
+    organizationId,
+    userId,
+    userName,
+    entityType: "EXAM_RESULT",
+    entityId: result.id,
+    canonicalContent: JSON.stringify({
+      resultId: result.id,
+      fileName: input.fileName,
+      values: result.values,
+      notes: input.notes ?? null,
+    }),
+    pdfBuffer,
+  });
+
+  return result;
 }
 
 export async function getExamResultFile(

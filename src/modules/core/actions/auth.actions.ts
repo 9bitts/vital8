@@ -49,7 +49,22 @@ export async function signupAction(
     where: { email: normalizedEmail },
   });
   if (existing) {
-    return { success: false, error: "E-mail já cadastrado" };
+    try {
+      const { getMessagingAdapter } = await import("@/lib/integrations/messaging");
+      const adapter = getMessagingAdapter();
+      await adapter.send({
+        channel: "EMAIL",
+        to: normalizedEmail,
+        body: "Detectamos uma tentativa de cadastro com seu e-mail no Vital8. Se não foi você, ignore esta mensagem.",
+        subject: "Tentativa de cadastro — Vital8",
+      });
+    } catch {
+      // Adapter opcional — não revelar existência do e-mail
+    }
+    return {
+      success: true,
+      data: { email: normalizedEmail },
+    };
   }
 
   const passwordHash = await hashPassword(password);

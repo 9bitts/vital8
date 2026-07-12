@@ -1,8 +1,11 @@
 import type { TenantClient } from "@/lib/db/tenant-client";
 
-export async function listLocations(db: TenantClient) {
+export async function listLocations(db: TenantClient, branchId?: string | null) {
   return db.stockLocation.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      ...(branchId ? { branchId } : {}),
+    },
     include: { room: true },
     orderBy: [{ isCentral: "desc" }, { name: "asc" }],
   });

@@ -19,9 +19,37 @@ export type ProductInput = {
   isActive?: boolean;
 };
 
-export async function listProducts(db: TenantClient, query?: string) {
+export async function listProducts(
+  db: TenantClient,
+  query?: string,
+  branchId?: string | null,
+) {
+  if (!branchId) {
+    return db.product.findMany({
+      where: {
+        ...(query
+          ? {
+              OR: [
+                { name: { contains: query, mode: "insensitive" } },
+                { barcode: { contains: query } },
+              ],
+            }
+          : {}),
+      },
+      orderBy: { name: "asc" },
+    });
+  }
+
+  const balances = await db.stockBalance.findMany({
+    where: { location: { branchId } },
+    select: { productId: true },
+    distinct: ["productId"],
+  });
+  const productIds = balances.map((b) => b.productId);
+
   return db.product.findMany({
     where: {
+      id: { in: productIds.length > 0 ? productIds : ["__none__"] },
       ...(query
         ? {
             OR: [

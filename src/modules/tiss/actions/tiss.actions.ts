@@ -15,6 +15,7 @@ import {
   reopenBatch,
   listBatches,
   getBatchXml,
+  getBatchAccountingCsv,
 } from "../services/batch.service";
 import {
   listPriorAuthorizations,
@@ -245,6 +246,12 @@ export async function downloadBatchXmlAction(batchId: string) {
   const ctx = await requireAuth(["OWNER", "ADMIN", "FINANCEIRO"]);
   await requireTiss(ctx);
   return getBatchXml(ctx.db, batchId);
+}
+
+export async function downloadBatchAccountingCsvAction(batchId: string) {
+  const ctx = await requireAuth(["OWNER", "ADMIN", "FINANCEIRO"]);
+  await requireTiss(ctx);
+  return getBatchAccountingCsv(ctx.db, batchId);
 }
 
 export async function registerPaymentAction(input: unknown): Promise<ActionResult> {

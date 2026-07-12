@@ -40,7 +40,7 @@ Registro de decisões tomadas na Fase 1 quando há trade-offs ou dependências d
 
 **Decisão:** Role e organizationId vêm do JWT; troca de org atualiza via `session.update()`.
 
-**Reversibilidade:** Fase futura pode invalidar sessão ao desativar membro (webhook/job ou check no middleware).
+**Atualização Fase 16A:** `sessionVersion` em `User` (senha) e `Membership` (papel/desativação). Token invalidado quando versão diverge. `maxAge` 8h.
 
 ## Soft delete
 
@@ -111,7 +111,27 @@ Registro de decisões tomadas na Fase 1 quando há trade-offs ou dependências d
 
 **Decisão:** `Encounter` com status `ASSINADO` é imutável. `contentHash` SHA-256 do conteúdo canônico serializado na assinatura. Correções via `EncounterAmendment` (conteúdo criptografado). Update/delete bloqueados no service + testes.
 
-**Assinatura:** Adapter `DevSimpleSignatureAdapter` (usuário + hash + timestamp). Interface pronta para ICP-Brasil.
+**Assinatura:** Adapter `DevSimpleSignatureAdapter` em dev. **Fase 16D:** providers `ICP_A1` (CAdES/PKCS#7 no servidor), `ICP_DSAS` (API BirdID/Certisign genérica), carimbo ACT/ITI, PAdES em PDF, `SignedClinicalDocument` + verificador `/verificar/[codigo]`. Checklist NGS2 em `docs/sbis-ngs2.md`.
+
+**Prescrição digital (Fase 16E):** Adapter `prescription-provider` com `LOCAL` (DrugCatalog) e `MEMED` (embed + webhook). Checagem de alergias/interações bloqueante configurável por org. Código CFM + numeração controle especial (Port. 344). Envio via adapter `messaging`; liberação automática no portal (`ReleasedDocument`). Ver `docs/prescricao-digital.md`.
+
+**Comunicação e pagamentos (Fase 16F):** Roteamento de messaging por canal — WhatsApp Cloud API (Meta), Resend (e-mail), console em dev. PIX via adapter Efí genérico com `PatientPaymentLink` persistido e webhook de conciliação. Central de conversas unifica inbound WhatsApp + outbound + IA secretária. Ver `docs/comunicacao-real.md`.
+
+**WhatsApp produção (Fase 17B):** Port do Doctor8 — HMAC webhook, `WhatsAppDeliveryLog` multi-tenant, normalização E.164, templates por env/origem, readiness/probe na UI. Config híbrida: `MessagingSettings` por org com fallback env plataforma. Ver `docs/integracoes.md`.
+
+**Stripe (Fase 17C):** Assinatura SaaS via Checkout Subscription (`/app/assinatura`); cobrança paciente via Stripe Checkout payment mode. `ProcessedStripeEvent` para idempotência. Sem Stripe Connect (repasse profissional = fase futura). Prioridade pagamentos: Stripe → Efí PIX → mock. Ver `docs/integracoes.md`.
+
+**Daily.co teleconsulta (Fase 17D):** Port Doctor8 — salas privadas, tokens efêmeros, `DailyRecordingLog` e `TeleconsultVideoIncident` multi-tenant. Sem `DAILY_API_KEY` → Jitsi (dev). Consentimento CFM obrigatório antes de criar sala. Webhook HMAC para gravações. Ver `docs/integracoes.md`.
+
+**IA clínica (Fase 17E):** Roteamento híbrido no adapter `llm` — Anthropic para texto (copiloto, secretária, SOAP, CID); OpenAI Whisper para transcrição do Scribe. Mock determinístico por função sem chaves. Gateway, consentimento, minimização e logs inalterados (Fases 12/16G). Ver `docs/integracoes.md`.
+
+**TISS 4.01→4.03 (Fase 17F):** Port Doctor8 — `validateTissBatch` + `buildAccountingCsv`; regras de conselho profissional e carteirinha/CPF; validação antes de fechar lote; CSV contábil no faturamento. Base 4.03 da Fase 16B preservada. Ver `docs/tiss.md`.
+
+**Infra de apoio (Fase 17G):** S3 para storage de arquivos; Resend para e-mail; AWS SNS para SMS (SMS não roteia para WhatsApp); Google Calendar OAuth por profissional (`ProfessionalCalendarLink`); Receita Saúde no módulo fiscal com checklist portado do Doctor8. Sem credenciais → disco local + console. Ver `docs/integracoes.md`.
+
+**Lacuna ICP-Brasil (Fase 17A):** Provider `ICP_LACUNA` — fluxo redirect Signature Session (Doctor8), callback com PDF PAdES no storage, `LacunaSignatureSession` multi-tenant, audit `clinical.sign`. Pontos: Encounter, Prescrição, Atestado. Ver `docs/integracoes.md`.
+
+**IA clínica (Fase 16G):** Scribe ambiente com consentimento do paciente e descarte de áudio configurável. Copiloto integrado ao atendimento com aplicação SOAP por campo. Anomalias de gestão via `DailyOrgMetrics` → `BI_ANOMALY`. Ver `docs/ia-clinica.md`.
 
 ## Criptografia vs metadados clínicos (Fase 4)
 
@@ -151,21 +171,21 @@ Registro de decisões tomadas na Fase 1 quando há trade-offs ou dependências d
 
 **Decisão:** Regras por profissional (percentual em basis points ou fixo); base FATURADO ou RECEBIDO. Fechamento trava `CommissionStatement`. Estorno exige OWNER/ADMIN, motivo obrigatório, reabre recebível e lança saída no caixa se dinheiro.
 
-## Adapters financeiros (Fase 5)
+## Adapters financeiros (Fase 5, atualizado Fase 16C)
 
-**Decisão:** `nfse/` mock (numeração sequencial + PDF texto) e `payments/` mock (link PIX + página `/pagamento/[linkId]`). Interfaces prontas para eNotas/Focus e gateway real.
+**Decisão:** `nfse/` com providers **mock** (dev) e **nfse-nacional** (DPS → NFS-e Portal Nacional, LC 214/2025). `FiscalSettings` + `FiscalDocument` por org; certificado A1 criptografado com `phi.ts`. Receita Saúde para PF com exportação carnê-leão. CBS/IBS atrás de feature flag. `payments/` mock (link PIX). Documentação: `docs/nfse.md`.
 
 ## Auditoria financeira (Fase 5)
 
 **Decisão:** Toda mutação via `createAuditLog` (`sale.checkout`, `cash.open/close`, `payment.register`, `payment.refund`, etc.).
 
-## Versão TISS adotada (Fase 6)
+## Versão TISS adotada (Fase 6, atualizado Fase 16B)
 
-**Decisão:** Versão padrão **3.05.00** (configurável por operadora em `HealthInsurer.tissVersion`). XML gerado com namespace `http://www.ans.gov.br/padroes/tiss/schemas`, epílogo `<hash>` MD5 do conteúdo pré-epílogo. Operadoras seed usam 3.05.00 (Unimed) e 4.01.00 (Amil) para demonstrar multi-versão.
+**Decisão:** Versão padrão **4.03.00** (configurável por operadora em `HealthInsurer.tissVersion`). Suporte legado a **3.05.00** via strategy registry (`getTissStrategy`). Versões 4.01/4.02 normalizadas para 4.03 no builder. Prazo regulatório ANS: **01/07/2026** — após essa data, faturamento com 3.05 é inválido. XML com namespace `http://www.ans.gov.br/padroes/tiss/schemas`, epílogo `<hash>` MD5. Seed: Unimed 3.05.00 (legado), Amil 4.03.00.
 
-## Estratégia de schemas XSD (Fase 6)
+## Estratégia de schemas XSD (Fase 6, atualizado Fase 16B)
 
-**Decisão:** XSDs de referência em `src/lib/tiss/schemas/` (subset estrutural 3.05.00). Validação em runtime via `validateTissXmlStructure` + `validateGuideFields` (campo a campo na UI). Parser XSD completo não incluído no bundle — atualização: substituir/adicionar arquivo XSD por versão e estender validador estrutural; CI valida XML de lote nos testes unitários.
+**Decisão:** XSDs de referência em `src/lib/tiss/schemas/{3.05,4.03}/`. Validação em runtime via `validateTissXmlStructure(xml, tissVersion)` + `validateGuideFields(input, tissVersion)`. TISS 4.03 exige CNES do prestador e inclui `componenteOrganizacional` + `identificacaoSoftware` no cabeçalho. Documentação: `docs/tiss.md`.
 
 ## Numeração e conciliação TISS (Fase 6)
 
@@ -237,7 +257,7 @@ Registro de decisões tomadas na Fase 1 quando há trade-offs ou dependências d
 
 **OpenAPI:** Spec gerada manualmente a partir dos DTOs Zod em `src/modules/api/lib/openapi.ts` (sem dependência `zod-to-openapi` no MVP — schemas Zod validam runtime; OpenAPI documenta contrato estável). Portal Scalar em `/app/desenvolvedores`.
 
-**Autenticação:** `Authorization: Bearer {keyPrefix}.{secret}`; HMAC opcional `X-Vital8-Signature` em escritas.
+**Autenticação:** `Authorization: Bearer {keyPrefix}.{secret}`; HMAC `X-Vital8-Signature` **obrigatório em produção** para POST/PUT/PATCH/DELETE.
 
 **Escopos clínicos:** `encounters:read` retorna metadados sempre; seções descriptografadas somente com `clinicalAccessEnabled` no `ApiClient`, habilitado exclusivamente por `OWNER` com justificativa auditada (LGPD).
 
@@ -253,7 +273,7 @@ Registro de decisões tomadas na Fase 1 quando há trade-offs ou dependências d
 
 **Princípio:** IA sugere, humano decide — nenhuma ação clínica, financeira ou de comunicação executada sem revisão humana.
 
-**Provider:** Adapter `getLlmAdapter()` — mock determinístico sem `ANTHROPIC_API_KEY`; Anthropic Messages API como referência em produção.
+**Provider:** Adapter `getLlmAdapter()` — mock determinístico sem chaves; produção: Anthropic (complete) + OpenAI Whisper (transcribe) via `CompositeLlmAdapter` (Fase 17E).
 
 **Minimização:** Pipeline `minimize-payload.ts` remove CPF, telefone, e-mail e pseudonimiza nomes antes de chamadas externas.
 

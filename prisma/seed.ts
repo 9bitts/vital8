@@ -5,6 +5,7 @@ import { seedPatients } from "./patients-seed";
 import { seedScheduling } from "./scheduling-seed";
 import { seedCid10 } from "./cid10-seed";
 import { seedDrugCatalog } from "./drug-catalog-seed";
+import { seedDrugInteractions } from "./drug-interaction-seed";
 import { seedEmr } from "./emr-seed";
 import { seedFinance } from "./finance-seed";
 import { seedTiss } from "./tiss-seed";
@@ -297,6 +298,7 @@ async function main() {
   await seedScheduling(prisma, orgVidaPlena.id, orgDrTeste.id);
   await seedCid10(prisma);
   await seedDrugCatalog(prisma);
+  await seedDrugInteractions(prisma);
   await seedEmr(prisma, orgVidaPlena.id, ownerVidaPlena.id);
   await seedEmr(prisma, orgDrTeste.id, ownerDrTeste.id);
   await seedFinance(prisma, orgVidaPlena.id, ownerVidaPlena.id);

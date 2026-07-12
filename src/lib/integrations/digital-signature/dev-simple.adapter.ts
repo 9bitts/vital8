@@ -15,6 +15,8 @@ export class DevSimpleSignatureAdapter implements DigitalSignatureAdapter {
         userId: input.userId,
         userName: input.userName,
         contentHash: input.contentHash,
+        entityType: input.entityType,
+        entityId: input.entityId,
         note: "Assinatura simples de desenvolvimento — substituir por ICP-Brasil em produção",
       },
     };

@@ -1,10 +1,15 @@
 import type { TenantClient } from "@/lib/db/tenant-client";
 import { getOrgSettings } from "../lib/inventory-utils";
 
-export async function getInventoryAlerts(db: TenantClient, organizationId: string) {
+export async function getInventoryAlerts(
+  db: TenantClient,
+  organizationId: string,
+  branchId?: string | null,
+) {
   const settings = await getOrgSettings(organizationId);
   const alertDays = settings.expiryAlertDays ?? [30, 60, 90];
   const maxDays = Math.max(...alertDays, 90);
+  const balanceWhere = branchId ? { location: { branchId } } : {};
 
   const products = await db.product.findMany({ where: { isActive: true } });
   const belowMin = [];
@@ -12,7 +17,7 @@ export async function getInventoryAlerts(db: TenantClient, organizationId: strin
 
   for (const p of products) {
     const agg = await db.stockBalance.aggregate({
-      where: { productId: p.id },
+      where: { productId: p.id, ...balanceWhere },
       _sum: { quantity: true },
     });
     const qty = agg._sum.quantity ?? 0;
@@ -43,10 +48,23 @@ export async function getInventoryAlerts(db: TenantClient, organizationId: strin
   return { belowMin, expiring, alertDays };
 }
 
-export async function getDashboardSummary(db: TenantClient, organizationId: string) {
+export async function getDashboardSummary(
+  db: TenantClient,
+  organizationId: string,
+  branchId?: string | null,
+) {
+  const movementWhere = branchId
+    ? {
+        OR: [
+          { fromLocation: { branchId } },
+          { toLocation: { branchId } },
+        ],
+      }
+    : {};
   const [alerts, movements, products] = await Promise.all([
-    getInventoryAlerts(db, organizationId),
+    getInventoryAlerts(db, organizationId, branchId),
     db.stockMovement.findMany({
+      where: movementWhere,
       take: 15,
       orderBy: { createdAt: "desc" },
       include: { product: true, fromLocation: true, toLocation: true },

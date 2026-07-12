@@ -12,9 +12,18 @@ import {
   summarizePatientHistory,
   structureSoapFromText,
   suggestCid10Codes,
+  suggestCidFromAnamnesis,
+  draftClinicalDocument,
   aiTranscribe,
   updateAiInteractionOutcome,
 } from "@/modules/ai/services/clinical-copilot.service";
+import {
+  hasScribeConsent,
+  recordScribeConsent,
+  processScribeAudio,
+  markScribeApplied,
+  getActiveScribeSession,
+} from "@/modules/ai/services/scribe.service";
 import { AI_CLINICAL_FOOTER } from "@/modules/ai/lib/constants";
 import { rankTodayAppointmentsByNoShowRisk } from "@/modules/ai/services/no-show-score.service";
 import { prioritizeOverdueReceivables, draftCollectionMessage } from "@/modules/ai/services/smart-collection.service";
@@ -54,6 +63,7 @@ export async function saveAiSettingsAction(input: {
   silenceStartHour?: number | null;
   silenceEndHour?: number | null;
   monthlyTokenLimit?: number;
+  discardAudioAfterTranscription?: boolean;
 }): Promise<Result> {
   try {
     const ctx = await requireAuth(["OWNER"]);
@@ -68,6 +78,7 @@ export async function saveAiSettingsAction(input: {
         silenceStartHour: input.silenceStartHour ?? null,
         silenceEndHour: input.silenceEndHour ?? null,
         monthlyTokenLimit: input.monthlyTokenLimit ?? 500_000,
+        discardAudioAfterTranscription: input.discardAudioAfterTranscription ?? true,
       },
       update: {
         enabledResources: input.enabledResources,
@@ -77,6 +88,7 @@ export async function saveAiSettingsAction(input: {
         silenceStartHour: input.silenceStartHour,
         silenceEndHour: input.silenceEndHour,
         monthlyTokenLimit: input.monthlyTokenLimit,
+        discardAudioAfterTranscription: input.discardAudioAfterTranscription,
       },
     });
     revalidatePath("/app/configuracoes/ia");
@@ -314,4 +326,118 @@ export async function smartSearchAction(query: string) {
 
 export async function getNavItemsAction() {
   return NAV_ITEMS;
+}
+
+export async function checkScribeConsentAction(patientId: string) {
+  const ctx = await requireAuth(["PROFISSIONAL_SAUDE", "ADMIN", "OWNER"]);
+  const ok = await hasScribeConsent(ctx.db, patientId, ctx.organizationId);
+  return { hasConsent: ok };
+}
+
+export async function recordScribeConsentAction(
+  encounterId: string,
+  patientId: string,
+) {
+  try {
+    const ctx = await requireAuth(["PROFISSIONAL_SAUDE", "ADMIN", "OWNER"]);
+    const session = await recordScribeConsent(
+      ctx.db,
+      ctx.organizationId,
+      patientId,
+      encounterId,
+      ctx.userId,
+    );
+    return { success: true as const, data: { sessionId: session.id } };
+  } catch (e) {
+    return { success: false as const, error: e instanceof Error ? e.message : "Erro" };
+  }
+}
+
+export async function processScribeAudioAction(
+  sessionId: string,
+  audioBase64: string,
+) {
+  try {
+    const ctx = await requireAuth(["PROFISSIONAL_SAUDE", "ADMIN", "OWNER"]);
+    const result = await processScribeAudio(
+      ctx.db,
+      ctx.organizationId,
+      ctx.userId,
+      sessionId,
+      audioBase64,
+    );
+    return {
+      success: true as const,
+      data: {
+        transcript: result.transcript,
+        soap: result.soap,
+        soapLogId: result.soapLogId,
+        transcribeLogId: result.transcribeLogId,
+      },
+    };
+  } catch (e) {
+    return { success: false as const, error: e instanceof Error ? e.message : "Erro" };
+  }
+}
+
+export async function getScribeSessionAction(encounterId: string) {
+  const ctx = await requireAuth(["PROFISSIONAL_SAUDE", "ADMIN", "OWNER"]);
+  return getActiveScribeSession(ctx.db, ctx.organizationId, encounterId);
+}
+
+export async function markScribeAppliedAction(sessionId: string, soapLogId?: string) {
+  try {
+    const ctx = await requireAuth(["PROFISSIONAL_SAUDE", "ADMIN", "OWNER"]);
+    await markScribeApplied(ctx.db, ctx.organizationId, sessionId, soapLogId);
+    return { success: true as const };
+  } catch (e) {
+    return { success: false as const, error: e instanceof Error ? e.message : "Erro" };
+  }
+}
+
+export async function suggestCidFromAnamnesisAction(anamnesis: string) {
+  try {
+    const ctx = await requireAuth(["PROFISSIONAL_SAUDE", "ADMIN", "OWNER"]);
+    const result = await suggestCidFromAnamnesis(
+      ctx.organizationId,
+      ctx.userId,
+      anamnesis,
+      ctx.db,
+    );
+    return { success: true as const, data: { ...result, footer: AI_CLINICAL_FOOTER } };
+  } catch (e) {
+    return { success: false as const, error: e instanceof Error ? e.message : "Erro" };
+  }
+}
+
+export async function draftClinicalDocumentAction(
+  encounterId: string,
+  type: "certificate" | "referral" | "orientation",
+) {
+  try {
+    const ctx = await requireAuth(["PROFISSIONAL_SAUDE", "ADMIN", "OWNER"]);
+    const encounter = await ctx.db.encounter.findFirstOrThrow({
+      where: { id: encounterId },
+      include: {
+        patient: true,
+        professional: true,
+        sections: true,
+      },
+    });
+    const context = {
+      specialty: encounter.specialty,
+      patientName: encounter.patient.socialName ?? encounter.patient.fullName,
+      professionalName: encounter.professional.displayName,
+      sections: encounter.sections.map((s) => s.sectionType),
+    };
+    const result = await draftClinicalDocument(
+      ctx.organizationId,
+      ctx.userId,
+      type,
+      context,
+    );
+    return { success: true as const, data: { ...result, footer: AI_CLINICAL_FOOTER } };
+  } catch (e) {
+    return { success: false as const, error: e instanceof Error ? e.message : "Erro" };
+  }
 }

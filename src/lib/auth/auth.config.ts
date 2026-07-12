@@ -2,7 +2,7 @@ import type { NextAuthConfig } from "next-auth";
 import type { Role } from "@/generated/prisma/client";
 
 export const authConfig = {
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 8 * 60 * 60 },
   pages: {
     signIn: "/entrar",
   },
@@ -11,6 +11,7 @@ export const authConfig = {
       const path = request.nextUrl.pathname;
       const isProtected = path.startsWith("/app") || path.startsWith("/m");
       if (!isProtected) return true;
+      if (auth?.error === "SessionRevoked") return false;
       return !!auth?.user && !!auth.organizationId;
     },
     async jwt({ token, user, trigger, session }) {
@@ -20,6 +21,12 @@ export const authConfig = {
         if (user.organizationId) token.organizationId = user.organizationId;
         if (user.role) token.role = user.role;
         token.branchId = user.branchId ?? null;
+        if (user.userSessionVersion !== undefined) {
+          token.userSessionVersion = user.userSessionVersion;
+        }
+        if (user.membershipSessionVersion !== undefined) {
+          token.membershipSessionVersion = user.membershipSessionVersion;
+        }
       }
 
       if (trigger === "update" && session) {
@@ -41,6 +48,9 @@ export const authConfig = {
       return token;
     },
     async session({ session, token }) {
+      if (token.error === "SessionRevoked") {
+        return { ...session, error: "SessionRevoked" as const };
+      }
       return {
         ...session,
         user: {
@@ -62,6 +72,7 @@ declare module "next-auth" {
     organizationId: string;
     role: Role;
     branchId: string | null;
+    error?: "SessionRevoked";
     user: {
       id: string;
       email: string;
@@ -76,6 +87,8 @@ declare module "next-auth" {
     organizationId?: string;
     role?: Role;
     branchId?: string | null;
+    userSessionVersion?: number;
+    membershipSessionVersion?: number;
   }
 }
 
@@ -85,5 +98,8 @@ declare module "@auth/core/jwt" {
     organizationId?: string;
     role?: Role;
     branchId?: string | null;
+    userSessionVersion?: number;
+    membershipSessionVersion?: number;
+    error?: "SessionRevoked";
   }
 }

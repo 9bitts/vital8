@@ -30,7 +30,7 @@ export function verifyHmacSignature(
   rawBody: string,
   signatureHeader: string | null,
 ): boolean {
-  if (!signatureHeader) return true;
+  if (!signatureHeader) return false;
   const match = signatureHeader.match(/t=(\d+),v1=([a-f0-9]+)/i);
   if (!match) return false;
   const [, ts, sig] = match;
@@ -72,7 +72,18 @@ export async function authenticateApiRequest(
   }
 
   const sigHeader = request.headers.get("x-vital8-signature");
-  if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method) && sigHeader) {
+  const isWrite = ["POST", "PUT", "PATCH", "DELETE"].includes(request.method);
+  const hmacRequired =
+    isWrite &&
+    (process.env.NODE_ENV === "production" || process.env.VITAL8_REQUIRE_HMAC === "true");
+
+  if (hmacRequired) {
+    if (!sigHeader || !verifyHmacSignature(parsed.secret, rawBody, sigHeader)) {
+      throw unauthorized(
+        sigHeader ? "Assinatura HMAC inválida" : "Header X-Vital8-Signature obrigatório",
+      );
+    }
+  } else if (isWrite && sigHeader) {
     if (!verifyHmacSignature(parsed.secret, rawBody, sigHeader)) {
       throw unauthorized("Assinatura HMAC inválida");
     }

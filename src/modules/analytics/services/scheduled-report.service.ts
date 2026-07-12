@@ -1,4 +1,5 @@
 import { adminPrisma } from "@/lib/db/admin-client";
+import { safeLog } from "@/lib/security/log-redact";
 import { formatBRL } from "@/lib/money";
 import { toSpDateKey } from "../lib/periods";
 import { getExecutiveDashboard } from "./dashboard.service";
@@ -79,7 +80,7 @@ export async function processScheduledReports(organizationId: string, force = fa
 
       const prefs = await getNotificationPreferences(m.userId, organizationId);
       if (prefs.emailEnabled) {
-        console.log(`[Vital8 Report Email] ${m.user.email}: ${body.replace(/\n/g, " | ")}`);
+        safeLog("Vital8 Report Email", `${m.user.email}: ${body.replace(/\n/g, " | ")}`);
       }
     }
 

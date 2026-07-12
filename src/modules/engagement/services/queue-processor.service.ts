@@ -2,11 +2,28 @@ import type { CommunicationOrigin } from "@/generated/prisma/client";
 import { adminPrisma } from "@/lib/db/admin-client";
 import { decryptPHI } from "@/lib/crypto/phi";
 import { getMessagingAdapter } from "@/lib/integrations/messaging";
+import { normalizeWhatsAppPhone } from "@/lib/integrations/messaging/whatsapp-phone";
 import { isOptedOut } from "./opt-out.service";
 import { marketingFooter } from "../lib/template-renderer";
 
 const MAX_RETRIES = 3;
 const BACKOFF_MS = [60_000, 300_000, 900_000];
+
+function extractContactPhone(phonesEncrypted: string): string {
+  const raw = decryptPHI(phonesEncrypted);
+  let digits = "";
+  try {
+    const parsed = JSON.parse(raw) as Array<{ number?: string }> | string;
+    if (Array.isArray(parsed)) {
+      digits = String(parsed[0]?.number ?? "");
+    } else {
+      digits = raw;
+    }
+  } catch {
+    digits = raw;
+  }
+  return normalizeWhatsAppPhone(digits) ?? digits.replace(/\D/g, "").slice(0, 15);
+}
 
 function isMarketingOrigin(origin: CommunicationOrigin): boolean {
   return origin === "CAMPANHA" || origin === "ANIVERSARIO";
@@ -68,7 +85,7 @@ export async function processCommunicationQueue(limit = 50): Promise<{
         : "";
     } else {
       to = log.patient.phonesEncrypted
-        ? decryptPHI(log.patient.phonesEncrypted).replace(/\D/g, "").slice(0, 15)
+        ? extractContactPhone(log.patient.phonesEncrypted)
         : "";
     }
     if (!to) {
@@ -88,13 +105,32 @@ export async function processCommunicationQueue(limit = 50): Promise<{
       );
     }
 
+    const useWhatsAppTemplate = log.channel === "WHATSAPP" && !marketing;
+
     const result = await messaging.send({
       channel: log.channel,
       to,
       subject: log.subject ?? undefined,
       body,
+      organizationId: log.organizationId,
+      communicationOrigin: useWhatsAppTemplate ? log.origin : undefined,
+      templateLanguage: "pt_BR",
+      templateParams: useWhatsAppTemplate ? [log.patient.fullName] : undefined,
       metadata: { communicationLogId: log.id },
     });
+
+    if (result.messageId) {
+      const prevMeta =
+        typeof log.metadata === "object" && log.metadata !== null
+          ? (log.metadata as Record<string, unknown>)
+          : {};
+      await adminPrisma.communicationLog.update({
+        where: { id: log.id },
+        data: {
+          metadata: { ...prevMeta, whatsappMessageId: result.messageId },
+        },
+      });
+    }
 
     if (!result.success) {
       const retry = log.retryCount + 1;

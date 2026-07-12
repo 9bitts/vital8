@@ -58,6 +58,7 @@ export async function listLeadsAction(filters?: {
   const ctx = await requireMarketing();
   if (!canOperateLeads(ctx.role)) throw new AuthError("Permissão insuficiente", "FORBIDDEN");
   return listLeads(ctx.db, ctx.organizationId, {
+    branchId: ctx.branchId,
     status: filters?.status as never,
     leadSourceId: filters?.leadSourceId,
     marketingCampaignId: filters?.marketingCampaignId,

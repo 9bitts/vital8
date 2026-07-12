@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { encryptPHI } from "@/lib/crypto/phi";
-import { decryptPatientRecord } from "@/modules/patients/services/patient.service";
+import { decryptPatientRecord, buildLgpdExport } from "@/modules/patients/services/patient.service";
 import type { Patient } from "@/generated/prisma/client";
 
 describe("Patient PHI encryption", () => {
@@ -58,5 +58,55 @@ describe("Patient PHI encryption", () => {
     expect(decrypted.email).toBe("joao@test.local");
     expect(decrypted.address?.city).toBe("São Paulo");
     expect(decrypted.notes).toBe("Observação clínica");
+  });
+
+  it("export LGPD redige terceiros em notas", () => {
+    const patient = {
+      id: "p1",
+      organizationId: "org1",
+      searchName: "joao",
+      fullName: "João",
+      socialName: null,
+      cpfEncrypted: encryptPHI("52998224725"),
+      cpfHash: "abc",
+      cnsEncrypted: null,
+      rgEncrypted: null,
+      birthDate: null,
+      sex: null,
+      genderIdentity: null,
+      maritalStatus: null,
+      profession: null,
+      phonesEncrypted: null,
+      phoneSearch: null,
+      emailEncrypted: null,
+      addressEncrypted: null,
+      photoUrl: null,
+      notesEncrypted: encryptPHI("Encaminhado ao Dr. Carlos Silva — CPF 123.456.789-00"),
+      referralSource: null,
+      utmSource: null,
+      utmMedium: null,
+      utmCampaign: null,
+      utmTerm: null,
+      utmContent: null,
+      tags: [],
+      isIncomplete: false,
+      isActive: true,
+      anonymizedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+      guardians: [],
+      insurancePlans: [],
+      consents: [],
+      documents: [],
+      allergies: [],
+      chronicConditions: [],
+      medications: [],
+    } as unknown as Parameters<typeof buildLgpdExport>[0];
+
+    const exported = buildLgpdExport(patient);
+    expect(exported.patient.notes).not.toMatch(/Carlos Silva/);
+    expect(exported.patient.notes).toMatch(/TERCEIRO REDACTED/);
+    expect(exported.patient.notes).not.toMatch(/123\.456\.789/);
   });
 });

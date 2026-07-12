@@ -5,7 +5,7 @@ export class AnthropicLlmAdapter implements LlmAdapter {
   private apiKey: string;
   private model: string;
 
-  constructor(apiKey: string, model = "claude-3-5-sonnet-latest") {
+  constructor(apiKey: string, model = "claude-sonnet-4-20250514") {
     this.apiKey = apiKey;
     this.model = model;
   }
@@ -52,8 +52,10 @@ export class AnthropicLlmAdapter implements LlmAdapter {
     };
   }
 
-  async transcribe(_input: TranscribeInput): Promise<TranscribeResult> {
-    void _input;
-    throw new Error("Transcrição Anthropic não implementada — use mock em dev");
+  async transcribe(input: TranscribeInput): Promise<TranscribeResult> {
+    void input;
+    throw new Error(
+      "Transcrição via Anthropic não suportada — configure OPENAI_API_KEY para Whisper",
+    );
   }
 }

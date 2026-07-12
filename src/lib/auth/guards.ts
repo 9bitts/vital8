@@ -5,6 +5,7 @@ import type { Role as RoleType } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth/auth";
 import { createTenantClient } from "@/lib/db/tenant-client";
 import { canUser } from "@/modules/admin/services/permission-profile.service";
+import { assertBranchBelongsToOrg } from "@/modules/admin/services/branch.service";
 
 export class AuthError extends Error {
   constructor(
@@ -46,6 +47,10 @@ export async function requireAuth(
     throw new AuthError("Não autenticado", "UNAUTHORIZED");
   }
 
+  if (session.error === "SessionRevoked") {
+    throw new AuthError("Sessão expirada ou revogada", "UNAUTHORIZED");
+  }
+
   if (!session.organizationId || !session.role) {
     throw new AuthError("Organização ativa não definida", "NO_ORGANIZATION");
   }
@@ -82,6 +87,14 @@ export async function can(ctx: AuthContext, key: PermissionKey): Promise<boolean
 export function branchScope(branchId: string | null | undefined) {
   if (!branchId) return {};
   return { branchId };
+}
+
+export async function requireValidBranch(
+  ctx: AuthContext,
+  branchId: string | null | undefined,
+): Promise<void> {
+  if (!branchId) return;
+  await assertBranchBelongsToOrg(ctx.organizationId, branchId);
 }
 
 export async function getRequestMeta(): Promise<{

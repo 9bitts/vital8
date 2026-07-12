@@ -17,7 +17,7 @@ import {
   ensureSubscription,
   getSubscriptionUsage,
 } from "../services/subscription.service";
-import { getBillingAdapter } from "@/lib/integrations/billing/mock.adapter";
+import { getBillingAdapter } from "@/lib/integrations/billing";
 import { createAuditLog } from "@/modules/core/services/audit.service";
 
 export async function listBranchesAction() {

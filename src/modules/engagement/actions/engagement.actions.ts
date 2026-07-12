@@ -268,3 +268,24 @@ export async function createTeleconsultRoomAction(encounterId: string) {
   const { createTeleconsultRoom } = await import("../services/teleconsult.service");
   return createTeleconsultRoom(ctx.organizationId, encounterId);
 }
+
+export async function reportTeleconsultVideoIncidentAction(
+  input: unknown,
+): Promise<ActionResult> {
+  try {
+    const ctx = await requireAuth(["OWNER", "ADMIN", "PROFISSIONAL_SAUDE"]);
+    const { teleconsultVideoIncidentSchema, reportTeleconsultVideoIncident } =
+      await import("../services/teleconsult.service");
+    const parsed = teleconsultVideoIncidentSchema.parse(input);
+    await reportTeleconsultVideoIncident(
+      ctx.organizationId,
+      ctx.userId,
+      parsed,
+    );
+    return { success: true };
+  } catch (e) {
+    if (e instanceof AuthError) return { success: false, error: e.message };
+    if (e instanceof Error) return { success: false, error: e.message };
+    return { success: false, error: "Erro ao registrar incidente" };
+  }
+}

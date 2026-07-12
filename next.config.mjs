@@ -17,7 +17,7 @@ const publicSecurityHeaders = [
 const cspHeader = {
   key: "Content-Security-Policy",
   value:
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self';",
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self';",
 };
 
 const nextConfig = {

@@ -9,7 +9,7 @@ export class MockPushAdapter implements PushAdapter {
 
   async send(sub: PushSubscriptionInput, payload: PushPayload): Promise<void> {
     this.sent.push({ sub, payload });
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
       console.log("[MockPush]", payload.title, payload.body);
     }
   }

@@ -61,6 +61,7 @@ export async function requestPortalOtp(input: {
     channel: "SMS",
     to: digits,
     body: `Seu código Vital8: ${otp}. Válido por 10 minutos.`,
+    organizationId: input.organizationId,
   });
 
   return { patientFound: Boolean(patient), patientId: patient?.id ?? null };

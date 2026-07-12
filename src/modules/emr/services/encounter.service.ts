@@ -6,11 +6,12 @@ import type {
 } from "@/generated/prisma/client";
 import type { TenantClient } from "@/lib/db/tenant-client";
 import { encryptPHI, decryptPHI } from "@/lib/crypto/phi";
-import { getDigitalSignatureAdapter } from "@/lib/integrations/digital-signature";
+import { signClinicalDocument } from "./clinical-signature.service";
 import {
   buildCanonicalEncounter,
   computeEncounterContentHash,
 } from "./integrity.service";
+import { generateEncounterSummaryPdf } from "./pdf.service";
 import { logRecordAccess } from "./record-access.service";
 import { canViewRestrictedSection } from "../lib/permissions";
 import { transitionAppointmentStatus } from "@/modules/scheduling/services/appointment.service";
@@ -306,6 +307,8 @@ export async function signEncounter(
   const encounter = await db.encounter.findFirstOrThrow({
     where: { id: encounterId },
     include: {
+      patient: { select: { fullName: true, socialName: true } },
+      professional: true,
       sections: { orderBy: { sortOrder: "asc" } },
       amendments: true,
       odontogram: { include: { entries: true } },
@@ -347,12 +350,52 @@ export async function signEncounter(
   });
 
   const contentHash = computeEncounterContentHash(canonical);
-  const signature = await getDigitalSignatureAdapter().sign({
+
+  const org = await db.organization.findFirstOrThrow({
+    where: { id: organizationId },
+  });
+
+  const sectionSummaries = sectionsPlain.map(
+    (s) => `${s.sectionType}: ${(s.contentPlain ?? "").slice(0, 80)}`,
+  );
+
+  const pdfBuffer = generateEncounterSummaryPdf({
+    header: {
+      orgName: org.name,
+      professionalName: encounter.professional.displayName,
+      council: encounter.professional.councilType ?? undefined,
+      councilNumber: encounter.professional.councilNumber ?? undefined,
+      councilState: encounter.professional.councilState ?? undefined,
+    },
+    patientName: encounter.patient.socialName ?? encounter.patient.fullName,
+    specialty: encounter.specialty,
+    modality: encounter.modality,
+    startedAt: encounter.startedAt,
+    sectionSummaries,
+  });
+
+  const signOutcome = await signClinicalDocument({
+    db,
+    organizationId,
     userId,
     userName,
-    contentHash,
-    timestamp: new Date(),
+    entityType: "ENCOUNTER",
+    entityId: encounterId,
+    canonicalContent: JSON.stringify(canonical),
+    pdfBuffer,
+    auditMeta: { returnPath: `/app/atendimento/${encounterId}` },
   });
+
+  if (signOutcome.kind === "lacuna_redirect") {
+    return {
+      contentHash: signOutcome.contentHash,
+      verificationCode: signOutcome.verificationCode,
+      redirectUrl: signOutcome.redirectUrl,
+      lacunaPending: true,
+    };
+  }
+
+  const { signature, verificationCode } = signOutcome;
 
   const signed = await db.encounter.update({
     where: { id: encounterId },
@@ -361,7 +404,10 @@ export async function signEncounter(
       contentHash,
       signedAt: signature.signedAt,
       endedAt: new Date(),
-      signatureMeta: signature.metadata,
+      signatureMeta: {
+        ...signature.metadata,
+        verificationCode,
+      },
     },
   });
 
@@ -384,7 +430,7 @@ export async function signEncounter(
   await autoReleaseEncounterDocuments(organizationId, encounterId);
   await schedulePostEncounterNps(organizationId, encounterId);
 
-  return { encounter: signed, contentHash, signature };
+  return { encounter: signed, contentHash, signature, verificationCode };
 }
 
 export async function addEncounterAmendment(

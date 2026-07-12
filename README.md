@@ -251,14 +251,14 @@ npm run dev
 
 Fluxo manual (`ana@vidaplena.local` / `Vital8@dev` — org **ENTERPRISE**):
 
-1. `/app/configuracoes/convenios` — operadoras (ANS, versão TISS), vínculo tabela de preços, mapeamento Service ↔ TUSS, import CSV
+1. `/app/configuracoes/convenios` — operadoras (ANS, versão TISS **3.05 ou 4.03**), banner regulatório jul/2026, vínculo tabela de preços, mapeamento Service ↔ TUSS, import CSV
 2. Agendar por convênio (não particular) com carteirinha; operadora Unimed exige autorização
 3. `/app/faturamento/autorizacoes` — registrar senha/validade ou verificar alertas de expiração
 4. `/app/recepcao` — check-in: alertas de elegibilidade (carteirinha, TUSS, autorização)
 5. Finalizar atendimento → guia TISS gerada automaticamente em `/app/faturamento`
 6. Corrigir pendência (guia RASCUNHO) → **Revalidar** até status PRONTA
 7. Selecionar guias → **Gerar lote** → **Fechar lote** → **Baixar XML**
-8. Validar XML: epílogo `<hash>` MD5, namespace ANS, estrutura (testes `validator.test.ts`)
+8. Validar XML: epílogo `<hash>` MD5, namespace ANS, estrutura por versão (testes `validator.test.ts`; ver `docs/tiss.md`)
 9. **Enviar** lote (adapter mock) → `/app/faturamento/conciliacao` — lançar demonstrativo guia a guia
 10. Aplicar glosa parcial → `/app/faturamento/glosas` — iniciar recurso
 11. Conferir indicadores na dashboard de faturamento (% glosa, prazo pagamento, pendentes)

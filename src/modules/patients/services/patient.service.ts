@@ -14,6 +14,7 @@ import {
   normalizePhone,
   normalizeSearchName,
 } from "@/lib/crypto/search-hash";
+import { redactThirdPartyText } from "@/lib/security/text-redact";
 import type { TenantClient } from "@/lib/db/tenant-client";
 import type {
   PatientContactInput,
@@ -245,6 +246,7 @@ export async function getPatientById(db: TenantClient, patientId: string) {
 
 export type PatientListFilters = {
   organizationId: string;
+  branchId?: string | null;
   query?: string;
   tag?: string;
   insurer?: string;
@@ -320,6 +322,36 @@ export async function searchPatients(
     });
     const patientIds = Array.from(new Set(plans.map((p) => p.patientId)));
     where.id = { in: patientIds.length > 0 ? patientIds : ["__none__"] };
+  }
+
+  if (filters.branchId) {
+    const [apptRows, leadRows] = await Promise.all([
+      db.appointment.findMany({
+        where: { branchId: filters.branchId },
+        select: { patientId: true },
+        distinct: ["patientId"],
+      }),
+      db.lead.findMany({
+        where: { branchId: filters.branchId, patientId: { not: null } },
+        select: { patientId: true },
+      }),
+    ]);
+    const branchPatientIds = Array.from(
+      new Set([
+        ...apptRows.map((a) => a.patientId),
+        ...leadRows.map((l) => l.patientId!).filter(Boolean),
+      ]),
+    );
+    const existingId = where.id as { in: string[] } | undefined;
+    if (existingId?.in) {
+      const set = new Set(branchPatientIds);
+      where.id = { in: existingId.in.filter((id) => set.has(id)) };
+      if ((where.id as { in: string[] }).in.length === 0) {
+        where.id = { in: ["__none__"] };
+      }
+    } else {
+      where.id = { in: branchPatientIds.length > 0 ? branchPatientIds : ["__none__"] };
+    }
   }
 
   const sortField = filters.sortBy ?? "fullName";
@@ -536,9 +568,13 @@ export type LgpdExportData = {
 export function buildLgpdExport(
   patient: NonNullable<Awaited<ReturnType<typeof getPatientById>>>,
 ): LgpdExportData {
+  const decrypted = decryptPatientRecord(patient);
   return {
     exportedAt: new Date().toISOString(),
-    patient: decryptPatientRecord(patient),
+    patient: {
+      ...decrypted,
+      notes: redactThirdPartyText(decrypted.notes),
+    },
     guardians: patient.guardians.map(decryptGuardian),
     insurancePlans: patient.insurancePlans.map(decryptInsurancePlan),
     consents: patient.consents,
@@ -548,9 +584,18 @@ export function buildLgpdExport(
       category: d.category,
       createdAt: d.createdAt,
     })),
-    allergies: patient.allergies.map(decryptAllergy),
-    chronicConditions: patient.chronicConditions.map(decryptChronicCondition),
-    medications: patient.medications.map(decryptMedication),
+    allergies: patient.allergies.map((a) => {
+      const d = decryptAllergy(a);
+      return { ...d, notes: redactThirdPartyText(d.notes) };
+    }),
+    chronicConditions: patient.chronicConditions.map((c) => {
+      const d = decryptChronicCondition(c);
+      return { ...d, notes: redactThirdPartyText(d.notes) };
+    }),
+    medications: patient.medications.map((m) => {
+      const d = decryptMedication(m);
+      return { ...d, notes: redactThirdPartyText(d.notes) };
+    }),
   };
 }
 

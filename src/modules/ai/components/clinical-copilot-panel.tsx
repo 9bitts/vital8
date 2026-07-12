@@ -1,31 +1,55 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   summarizeHistoryAction,
   structureSoapAction,
-  suggestCidAction,
+  suggestCidFromAnamnesisAction,
+  draftClinicalDocumentAction,
   recordAiOutcomeAction,
 } from "@/modules/ai/actions/ai.actions";
+import { AmbientScribePanel } from "@/modules/ai/components/ambient-scribe-panel";
 import { AI_CLINICAL_FOOTER } from "@/modules/ai/lib/constants";
+
+const SOAP_LABELS: Record<string, string> = {
+  subjective: "Subjetivo (S)",
+  objective: "Objetivo (O)",
+  assessment: "Avaliação (A)",
+  plan: "Plano (P)",
+};
 
 type Props = {
   patientId: string;
+  encounterId: string;
+  anamnesisText?: string;
+  disabled?: boolean;
+  onApplySoapField?: (field: string, value: string) => void;
 };
 
-export function ClinicalCopilotPanel({ patientId }: Props) {
+export function ClinicalCopilotPanel({
+  patientId,
+  encounterId,
+  anamnesisText,
+  disabled,
+  onApplySoapField,
+}: Props) {
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryLogId, setSummaryLogId] = useState<string | null>(null);
   const [dictation, setDictation] = useState("");
   const [soap, setSoap] = useState<Record<string, string> | null>(null);
   const [soapLogId, setSoapLogId] = useState<string | null>(null);
-  const [cidHypothesis, setCidHypothesis] = useState("");
   const [cidSuggestions, setCidSuggestions] = useState<{ code: string; label: string }[]>([]);
+  const [cidLogId, setCidLogId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<string | null>(null);
+  const [draftLogId, setDraftLogId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [autoLoaded, setAutoLoaded] = useState(false);
 
-  function summarize() {
+  useEffect(() => {
+    if (autoLoaded || disabled) return;
+    setAutoLoaded(true);
     startTransition(async () => {
       const r = await summarizeHistoryAction(patientId);
       if (r.success && r.data) {
@@ -33,14 +57,14 @@ export function ClinicalCopilotPanel({ patientId }: Props) {
         setSummaryLogId(r.data.logId);
       }
     });
-  }
+  }, [patientId, disabled, autoLoaded]);
 
   function structureSoap() {
     startTransition(async () => {
       const r = await structureSoapAction(dictation);
       if (r.success && r.data) {
         try {
-          setSoap(JSON.parse(r.data.text));
+          setSoap(JSON.parse(r.data.text) as Record<string, string>);
         } catch {
           setSoap({ subjective: r.data.text });
         }
@@ -49,10 +73,25 @@ export function ClinicalCopilotPanel({ patientId }: Props) {
     });
   }
 
-  function suggestCid() {
+  function suggestCidFromAnamnesis() {
+    const text = anamnesisText?.trim();
+    if (!text) return;
     startTransition(async () => {
-      const r = await suggestCidAction(cidHypothesis);
-      if (r.success && r.data) setCidSuggestions(r.data.suggestions);
+      const r = await suggestCidFromAnamnesisAction(text);
+      if (r.success && r.data) {
+        setCidSuggestions(r.data.suggestions);
+        setCidLogId(r.data.logId);
+      }
+    });
+  }
+
+  function loadDraft(type: "certificate" | "referral" | "orientation") {
+    startTransition(async () => {
+      const r = await draftClinicalDocumentAction(encounterId, type);
+      if (r.success && r.data) {
+        setDraft(r.data.text);
+        setDraftLogId(r.data.logId);
+      }
     });
   }
 
@@ -68,20 +107,27 @@ export function ClinicalCopilotPanel({ patientId }: Props) {
       <h3 className="font-semibold text-violet-900">Copiloto clínico (IA)</h3>
       <p className="text-xs text-violet-700">{AI_CLINICAL_FOOTER}</p>
 
-      <div className="space-y-2">
-        <Button size="sm" variant="outline" onClick={summarize} disabled={pending}>
-          Resumir histórico
-        </Button>
-        {summary && (
-          <div className="rounded bg-white p-2 text-xs whitespace-pre-wrap border">
-            <BadgeAi /> {summary}
-            <div className="flex gap-1 mt-2">
-              <Button size="sm" onClick={() => outcome(summaryLogId, "ACCEPTED")}>Aceitar</Button>
-              <Button size="sm" variant="outline" onClick={() => outcome(summaryLogId, "REJECTED")}>Rejeitar</Button>
-            </div>
+      <AmbientScribePanel
+        encounterId={encounterId}
+        patientId={patientId}
+        disabled={disabled}
+        onApplySoapField={onApplySoapField}
+      />
+
+      {summary && (
+        <div className="rounded bg-white p-2 text-xs whitespace-pre-wrap border">
+          <BadgeAi /> <strong>Resumo do histórico</strong>
+          <p className="mt-1">{summary}</p>
+          <div className="flex gap-1 mt-2">
+            <Button size="sm" onClick={() => outcome(summaryLogId, "ACCEPTED")}>
+              Útil
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => outcome(summaryLogId, "REJECTED")}>
+              Descartar
+            </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Textarea
@@ -89,47 +135,103 @@ export function ClinicalCopilotPanel({ patientId }: Props) {
           value={dictation}
           onChange={(e) => setDictation(e.target.value)}
           rows={3}
+          disabled={disabled}
         />
-        <Button size="sm" variant="outline" onClick={structureSoap} disabled={pending || !dictation}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={structureSoap}
+          disabled={pending || !dictation || disabled}
+        >
           Estruturar SOAP
         </Button>
         {soap && (
-          <div className="rounded bg-white p-2 text-xs space-y-1 border">
+          <div className="rounded bg-white p-2 text-xs space-y-2 border">
             <BadgeAi />
-            {Object.entries(soap).map(([k, v]) => (
-              <p key={k}><strong>{k}:</strong> {v}</p>
+            {Object.entries(soap).map(([field, value]) => (
+              <div key={field}>
+                <p className="font-medium">{SOAP_LABELS[field] ?? field}</p>
+                <p className="whitespace-pre-wrap">{value}</p>
+                {onApplySoapField && !disabled && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-1"
+                    onClick={() => onApplySoapField(field, value)}
+                  >
+                    Aplicar {SOAP_LABELS[field] ?? field}
+                  </Button>
+                )}
+              </div>
             ))}
-            <p className="text-zinc-500 italic">Revise antes de salvar no prontuário.</p>
             <div className="flex gap-1">
-              <Button size="sm" onClick={() => outcome(soapLogId, "EDITED")}>Salvar após revisão</Button>
-              <Button size="sm" variant="outline" onClick={() => outcome(soapLogId, "REJECTED")}>Descartar</Button>
+              <Button size="sm" onClick={() => outcome(soapLogId, "EDITED")}>
+                Revisado
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => outcome(soapLogId, "REJECTED")}>
+                Descartar
+              </Button>
             </div>
           </div>
         )}
       </div>
 
       <div className="space-y-2">
-        <Textarea
-          placeholder="Hipótese para sugestão CID-10…"
-          value={cidHypothesis}
-          onChange={(e) => setCidHypothesis(e.target.value)}
-          rows={2}
-        />
-        <Button size="sm" variant="outline" onClick={suggestCid} disabled={pending || !cidHypothesis}>
-          Sugerir CID-10
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={suggestCidFromAnamnesis}
+          disabled={pending || !anamnesisText?.trim() || disabled}
+        >
+          Sugerir CID-10 (anamnese)
         </Button>
         {cidSuggestions.length > 0 && (
           <ul className="text-xs space-y-1">
+            <BadgeAi />
             {cidSuggestions.map((c) => (
-              <li key={c.code} className="rounded bg-white px-2 py-1 border">{c.code} — {c.label}</li>
+              <li key={c.code} className="rounded bg-white px-2 py-1 border">
+                {c.code} — {c.label}
+              </li>
             ))}
+            <Button size="sm" className="mt-1" onClick={() => outcome(cidLogId, "ACCEPTED")}>
+              Aceitar sugestões
+            </Button>
           </ul>
         )}
       </div>
+
+      {!disabled && (
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => loadDraft("certificate")}>
+            Rascunho atestado
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => loadDraft("referral")}>
+            Rascunho encaminhamento
+          </Button>
+        </div>
+      )}
+
+      {draft && (
+        <div className="rounded bg-white border p-2 text-xs whitespace-pre-wrap">
+          <BadgeAi /> {draft}
+          <div className="flex gap-1 mt-2">
+            <Button size="sm" onClick={() => outcome(draftLogId, "EDITED")}>
+              Copiar após revisão
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => outcome(draftLogId, "REJECTED")}>
+              Descartar
+            </Button>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
 
 function BadgeAi() {
-  return <span className="text-[10px] bg-violet-200 text-violet-800 px-1 rounded mr-1">IA</span>;
+  return (
+    <span className="text-[10px] bg-violet-200 text-violet-800 px-1 rounded mr-1">
+      IA
+    </span>
+  );
 }

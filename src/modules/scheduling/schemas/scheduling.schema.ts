@@ -68,6 +68,7 @@ export const appointmentCreateSchema = z.object({
   professionalId: z.string(),
   serviceId: z.string(),
   roomId: z.string().optional().nullable(),
+  branchId: z.string().cuid().optional().nullable(),
   startsAt: z.coerce.date(),
   origin: z.enum(["RECEPCAO", "TELEFONE", "ONLINE"]).default("RECEPCAO"),
   isPrivate: z.boolean().default(true),

@@ -17,4 +17,7 @@ export interface StorageAdapter {
   download(storageKey: string): Promise<Buffer>;
 
   delete(storageKey: string): Promise<void>;
+
+  /** URL temporária para download (S3). */
+  getSignedUrl?(storageKey: string, expiresInSeconds?: number): Promise<string>;
 }

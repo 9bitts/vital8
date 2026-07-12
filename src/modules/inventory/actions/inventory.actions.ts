@@ -74,13 +74,13 @@ async function requireInventory(ctx: Awaited<ReturnType<typeof requireAuth>>) {
 export async function getDashboardAction() {
   const ctx = await requireAuth(["OWNER", "ADMIN", "ESTOQUE", "FINANCEIRO", "RECEPCAO"]);
   await requireInventory(ctx);
-  return getDashboardSummary(ctx.db, ctx.organizationId);
+  return getDashboardSummary(ctx.db, ctx.organizationId, ctx.branchId);
 }
 
 export async function listProductsAction(query?: string) {
   const ctx = await requireAuth(["OWNER", "ADMIN", "ESTOQUE", "FINANCEIRO", "RECEPCAO"]);
   await requireInventory(ctx);
-  return listProducts(ctx.db, query);
+  return listProducts(ctx.db, query, ctx.branchId);
 }
 
 export async function saveProductAction(input: unknown): Promise<ActionResult> {
@@ -150,7 +150,7 @@ export async function lookupBarcodeAction(barcode: string) {
 export async function listLocationsAction() {
   const ctx = await requireAuth(["OWNER", "ADMIN", "ESTOQUE", "FINANCEIRO", "RECEPCAO"]);
   await requireInventory(ctx);
-  return listLocations(ctx.db);
+  return listLocations(ctx.db, ctx.branchId);
 }
 
 export async function createPurchaseOrderAction(input: unknown): Promise<ActionResult<{ id: string }>> {

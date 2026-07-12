@@ -33,6 +33,7 @@ export const checkoutSchema = z.object({
 
 export const openCashRegisterSchema = z.object({
   openingAmountCents: z.coerce.number().int().min(0),
+  branchId: z.string().cuid().optional().nullable(),
 });
 
 export const closeCashRegisterSchema = z.object({

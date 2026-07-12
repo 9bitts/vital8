@@ -1,14 +1,16 @@
 import type { TenantClient } from "@/lib/db/tenant-client";
 import { sumCents } from "@/lib/money";
+import { branchFilter } from "@/modules/admin/services/branch.service";
 
 export async function openCashRegister(
   db: TenantClient,
   organizationId: string,
   userId: string,
   openingAmountCents: number,
+  branchId?: string | null,
 ) {
   const open = await db.cashRegister.findFirst({
-    where: { userId, status: "ABERTO" },
+    where: { userId, status: "ABERTO", ...branchFilter(branchId) },
   });
   if (open) throw new Error("Caixa já aberto para este usuário");
 
@@ -16,6 +18,7 @@ export async function openCashRegister(
     data: {
       organizationId,
       userId,
+      branchId: branchId ?? null,
       status: "ABERTO",
       openingAmountCents,
     },
@@ -34,9 +37,13 @@ export async function openCashRegister(
   return register;
 }
 
-export async function getOpenCashRegister(db: TenantClient, userId: string) {
+export async function getOpenCashRegister(
+  db: TenantClient,
+  userId: string,
+  branchId?: string | null,
+) {
   return db.cashRegister.findFirst({
-    where: { userId, status: "ABERTO" },
+    where: { userId, status: "ABERTO", ...branchFilter(branchId) },
     include: {
       entries: { orderBy: { createdAt: "asc" } },
       payments: true,
@@ -118,9 +125,13 @@ export async function closeCashRegister(
 export async function listCashRegisterHistory(
   db: TenantClient,
   userId?: string,
+  branchId?: string | null,
 ) {
   return db.cashRegister.findMany({
-    where: userId ? { userId } : {},
+    where: {
+      ...(userId ? { userId } : {}),
+      ...branchFilter(branchId),
+    },
     orderBy: { openedAt: "desc" },
     take: 30,
     include: { entries: true },

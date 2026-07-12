@@ -2,7 +2,12 @@ import type { TenantClient } from "@/lib/db/tenant-client";
 import { getStorageAdapter } from "@/lib/integrations/storage";
 import { getTissTransportAdapter } from "@/lib/integrations/tiss-transport";
 import { nextSequenceNumber } from "@/lib/tiss/sequence";
-import type { TissGuidePayload } from "@/lib/tiss/types";
+import { validateTissBatch } from "@/lib/tiss/batch-validation";
+import {
+  buildAccountingCsv,
+  buildBatchAccountingRows,
+} from "@/lib/tiss/accounting-csv";
+import type { TissGuidePayload, TissProcedureLine } from "@/lib/tiss/types";
 import { validateTissXmlStructure } from "@/lib/tiss/validator";
 import { buildTissBatchXml } from "@/lib/tiss/xml-builder";
 import { batchCreateSchema, batchReopenSchema } from "../schemas/tiss.schema";
@@ -86,12 +91,44 @@ export async function closeBatch(
   const settings = batch.organization.settings as Record<string, unknown>;
   const cnes = (settings.cnes as string) ?? batch.guides[0]?.providerCnes ?? null;
 
+  const batchValidationErrors = validateTissBatch({
+    batchNumber: batch.batchNumber,
+    competence: batch.competence,
+    ansRegistration: batch.healthInsurer.ansRegistration,
+    providerDocument: batch.organization.documentNumber,
+    organizationName: batch.organization.name,
+    providerCnes: cnes,
+    providerCodeAtInsurer: batch.healthInsurer.providerCodeAtInsurer,
+    tissVersion: batch.healthInsurer.tissVersion,
+    guides: batch.guides.map((g) => ({
+      guideNumber: g.guideNumber,
+      guideType: g.guideType,
+      beneficiaryName: g.beneficiaryName,
+      beneficiaryCard: g.beneficiaryCard,
+      professionalName: g.professionalName,
+      professionalCouncilNumber: g.professionalCouncilNumber,
+      procedures: (g.procedures as TissProcedureLine[]).map((p) => ({
+        tussCode: p.tussCode,
+        quantity: p.quantity,
+        unitValueCents: p.unitValueCents,
+      })),
+      totalValueCents: g.totalValueCents,
+    })),
+  });
+
+  if (batchValidationErrors.length > 0) {
+    throw new Error(
+      `Lote inválido: ${batchValidationErrors.map((e) => e.message).join("; ")}`,
+    );
+  }
+
   const { xml, hash } = buildTissBatchXml({
     tissVersion: batch.healthInsurer.tissVersion,
     ansRegistration: batch.healthInsurer.ansRegistration,
     providerDocument: batch.organization.documentNumber,
     providerCodeAtInsurer: batch.healthInsurer.providerCodeAtInsurer,
     providerCnes: cnes,
+    organizationName: batch.organization.name,
     batchNumber: batch.batchNumber,
     competence: batch.competence,
     guides: batch.guides.map((g) => ({
@@ -100,7 +137,7 @@ export async function closeBatch(
     })),
   });
 
-  const xmlErrors = validateTissXmlStructure(xml);
+  const xmlErrors = validateTissXmlStructure(xml, batch.healthInsurer.tissVersion);
   if (xmlErrors.length > 0) {
     throw new Error(
       `XML inválido: ${xmlErrors.map((e) => e.message).join("; ")}`,
@@ -234,4 +271,31 @@ export async function getBatchXml(db: TenantClient, batchId: string) {
   const storage = getStorageAdapter();
   const file = await storage.download(batch.xmlStorageKey);
   return { xml: file.toString("utf8"), hash: batch.xmlHash };
+}
+
+export async function getBatchAccountingCsv(db: TenantClient, batchId: string) {
+  const batch = await db.tissBatch.findFirstOrThrow({
+    where: { id: batchId },
+    include: { guides: true },
+  });
+
+  const rows = buildBatchAccountingRows({
+    batchNumber: batch.batchNumber,
+    competence: batch.competence,
+    guides: batch.guides.map((g) => ({
+      guideNumber: g.guideNumber,
+      guideType: g.guideType,
+      beneficiaryName: g.beneficiaryName,
+      beneficiaryCard: g.beneficiaryCard,
+      professionalName: g.professionalName,
+      professionalCouncilNumber: g.professionalCouncilNumber,
+      procedures: g.procedures as TissProcedureLine[],
+      totalValueCents: g.totalValueCents,
+    })),
+  });
+
+  return {
+    csv: buildAccountingCsv(rows),
+    filename: `lote-${batch.batchNumber}-contabil.csv`,
+  };
 }

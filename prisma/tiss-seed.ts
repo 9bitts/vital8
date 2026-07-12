@@ -118,7 +118,7 @@ export async function seedTiss(
       name: "Amil Demo",
       ansRegistration: "888888",
       cnpj: "00000000000272",
-      tissVersion: "4.01.00",
+      tissVersion: "4.03.00",
       providerCodeAtInsurer: "PREST-002",
       paymentTermDays: 45,
       requiresAuthorization: false,
