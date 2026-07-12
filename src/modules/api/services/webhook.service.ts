@@ -1,6 +1,7 @@
 import { createHmac } from "crypto";
 import type { Prisma } from "@/generated/prisma/client";
 import { adminPrisma } from "@/lib/db/admin-client";
+import { assertSafeOutboundUrl } from "@/lib/security/url-validation";
 import { hasOrgFeature } from "@/lib/features/subscription.service";
 import type { WebhookEventType } from "../lib/scopes";
 
@@ -61,6 +62,13 @@ export async function processWebhookDeliveries(limit = 50) {
   for (const d of pending) {
     const ep = d.webhookEndpoint;
     if (!ep.isActive) continue;
+
+    try {
+      assertSafeOutboundUrl(ep.url);
+    } catch {
+      await handleFailure(d.id, ep.id, d.attemptCount, null, "URL de webhook bloqueada (SSRF)");
+      continue;
+    }
 
     const body = JSON.stringify(d.payload);
     const ts = Math.floor(Date.now() / 1000);

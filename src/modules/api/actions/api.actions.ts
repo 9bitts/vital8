@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { randomBytes } from "crypto";
 import { adminPrisma } from "@/lib/db/admin-client";
+import { assertSafeOutboundUrl } from "@/lib/security/url-validation";
 import { requireAuth } from "@/lib/auth/guards";
 import { hasOrgFeature } from "@/lib/features/subscription.service";
 import { createAuditLog } from "@/modules/core/services/audit.service";
@@ -13,7 +15,6 @@ import {
   createApiKey,
   revokeApiKey,
 } from "@/modules/api/services/api-key.service";
-import { randomBytes } from "crypto";
 
 type ActionResult<T = void> =
   | { success: true; data?: T }
@@ -141,6 +142,8 @@ export async function createWebhookEndpointAction(input: {
     const ctx = await requireApiAdmin();
     const webhooksOk = await hasOrgFeature(ctx.organizationId, "webhooks");
     if (!webhooksOk) return { success: false, error: "Webhooks em plano ENTERPRISE" };
+
+    assertSafeOutboundUrl(input.url);
 
     const secret = randomBytes(32).toString("base64url");
     const ep = await adminPrisma.webhookEndpoint.create({
