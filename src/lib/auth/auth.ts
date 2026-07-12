@@ -39,6 +39,35 @@ function normalizeDocumentNumber(value: string): string {
   return value.replace(/\D/g, "");
 }
 
+async function getActiveMembershipsWithOrg(userId: string) {
+  return adminPrisma.membership.findMany({
+    where: {
+      userId,
+      isActive: true,
+      deletedAt: null,
+      organization: { isActive: true, deletedAt: null },
+    },
+    include: {
+      organization: {
+        select: { documentNumber: true },
+      },
+    },
+  });
+}
+
+function findMembershipByCnpj(
+  memberships: Awaited<ReturnType<typeof getActiveMembershipsWithOrg>>,
+  orgCnpj: string,
+) {
+  const normalized = normalizeDocumentNumber(orgCnpj);
+  return (
+    memberships.find(
+      (m) =>
+        normalizeDocumentNumber(m.organization.documentNumber) === normalized,
+    ) ?? null
+  );
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   providers: [
@@ -147,8 +176,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return "/entrar?error=Doctor8SemConta";
       }
 
-      const membership = await resolveActiveMembership(user.id);
-      if (!membership) {
+      const memberships = await getActiveMembershipsWithOrg(user.id);
+      if (memberships.length === 0) {
         console.warn(
           "SSO doctor8 bloqueado: sem membership ativo, sub=",
           p?.sub,
@@ -156,19 +185,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return "/entrar?error=Doctor8SemOrganizacao";
       }
 
-      const organization = await adminPrisma.organization.findFirst({
-        where: {
-          id: membership.organizationId,
-          deletedAt: null,
-        },
-        select: { documentNumber: true },
-      });
-
-      if (
-        !organization ||
-        normalizeDocumentNumber(organization.documentNumber) !==
-          normalizeDocumentNumber(p.org_cnpj)
-      ) {
+      const membership = findMembershipByCnpj(memberships, p.org_cnpj);
+      if (!membership) {
         console.warn(
           "SSO doctor8 bloqueado: CNPJ divergente, sub=",
           p?.sub,
@@ -204,9 +222,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           throw new Error("doctor8 SSO: usuário não encontrado");
         }
 
-        const membership = await resolveActiveMembership(vital8User.id);
+        const orgCnpj = p?.org_cnpj;
+        if (!orgCnpj) {
+          throw new Error("doctor8 SSO: org_cnpj ausente no jwt");
+        }
+
+        const memberships = await getActiveMembershipsWithOrg(vital8User.id);
+        const membership = findMembershipByCnpj(memberships, orgCnpj);
         if (!membership) {
-          throw new Error("doctor8 SSO: sem membership ativo");
+          throw new Error("doctor8 SSO: CNPJ divergente");
         }
 
         token.id = vital8User.id;
