@@ -16,26 +16,32 @@ export const DOCTOR8_CNPJ_LOGINS = [
     label: "Clínica / CNPJ",
     description: "Consultórios e clínicas cadastradas na Doctor8",
     icon: Building2,
+    orgType: "CLINIC",
   },
   {
     id: "empresa",
     label: "Empresa (CNPJ)",
     description: "Saúde ocupacional e empresas parceiras",
     icon: Briefcase,
+    orgType: "EMPLOYER",
   },
   {
     id: "farmacia",
     label: "Farmácia (CNPJ)",
     description: "Drogaria e rede de farmácias",
     icon: Pill,
+    orgType: "PHARMACY",
   },
   {
     id: "laboratorio",
     label: "Laboratório (CNPJ)",
     description: "Análises clínicas e exames de imagem",
     icon: FlaskConical,
+    orgType: "LABORATORY",
   },
 ] as const;
+
+export type Doctor8OrgType = (typeof DOCTOR8_CNPJ_LOGINS)[number]["orgType"];
 
 export function resolveDoctor8SsoError(code: string | undefined): string | null {
   switch (code) {
@@ -56,8 +62,12 @@ export function resolveDoctor8SsoError(code: string | undefined): string | null 
   }
 }
 
-function signInWithDoctor8() {
-  void signIn("doctor8", { callbackUrl: "/app" });
+export function signInWithDoctor8(orgType?: Doctor8OrgType) {
+  void signIn(
+    "doctor8",
+    { callbackUrl: "/app" },
+    orgType ? { account_type: orgType } : undefined,
+  );
 }
 
 type Doctor8LoginCtasProps = {
@@ -75,7 +85,7 @@ export function Doctor8LoginCtas({
         type="button"
         variant="outline"
         className={className}
-        onClick={signInWithDoctor8}
+        onClick={() => signInWithDoctor8()}
       >
         Entrar com Doctor8
       </Button>
@@ -85,7 +95,7 @@ export function Doctor8LoginCtas({
   if (variant === "stack") {
     return (
       <div className={cn("space-y-2", className)}>
-        <Button type="button" variant="outline" className="w-full" onClick={signInWithDoctor8}>
+        <Button type="button" variant="outline" className="w-full" onClick={() => signInWithDoctor8()}>
           Entrar com Doctor8
         </Button>
         <div className="grid gap-2 pt-1">
@@ -97,7 +107,7 @@ export function Doctor8LoginCtas({
                 type="button"
                 variant="ghost"
                 className="h-auto w-full justify-start gap-3 px-3 py-2.5 text-left"
-                onClick={signInWithDoctor8}
+                onClick={() => signInWithDoctor8(entry.orgType)}
               >
                 <Icon className="h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
                 <span className="min-w-0">
@@ -118,7 +128,7 @@ export function Doctor8LoginCtas({
 
   return (
     <div className={cn("space-y-4", className)}>
-      <Button type="button" size="lg" className="w-full sm:w-auto" onClick={signInWithDoctor8}>
+      <Button type="button" size="lg" className="w-full sm:w-auto" onClick={() => signInWithDoctor8()}>
         Entrar com Doctor8
       </Button>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -128,7 +138,7 @@ export function Doctor8LoginCtas({
             <button
               key={entry.id}
               type="button"
-              onClick={signInWithDoctor8}
+              onClick={() => signInWithDoctor8(entry.orgType)}
               className="rounded-lg border border-zinc-200 bg-white p-4 text-left transition hover:border-zinc-300 hover:bg-zinc-50"
             >
               <div className="mb-2 flex items-center gap-2 text-zinc-900">

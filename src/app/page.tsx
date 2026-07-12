@@ -1,9 +1,9 @@
 "use client";
 
 import { Space_Grotesk } from "next/font/google";
-import { signIn } from "next-auth/react";
 import {
   DOCTOR8_CNPJ_LOGINS,
+  signInWithDoctor8,
 } from "@/modules/core/components/doctor8-login-ctas";
 
 const spaceGrotesk = Space_Grotesk({
@@ -13,10 +13,6 @@ const spaceGrotesk = Space_Grotesk({
 
 const INFINITY_PATH =
   "M130 130 C130 62 250 62 250 130 C250 198 370 198 370 130 C370 62 250 62 250 130 C250 198 130 198 130 130 Z";
-
-function signInWithDoctor8() {
-  void signIn("doctor8", { callbackUrl: "/app" });
-}
 
 export default function HomePage() {
   return (
@@ -157,7 +153,7 @@ export default function HomePage() {
               <button
                 key={entry.id}
                 type="button"
-                onClick={signInWithDoctor8}
+                onClick={() => signInWithDoctor8(entry.orgType)}
                 className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-left backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.08] hover:shadow-[0_0_40px_rgba(255,255,255,0.08)]"
               >
                 <div
